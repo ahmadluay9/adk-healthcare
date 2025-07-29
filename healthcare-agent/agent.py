@@ -113,28 +113,15 @@ def dapatkan_pengingat_janji_temu(mrn: str) -> dict:
     appt_date = start_time.strftime("%A, %d %B %Y")
     appt_time = start_time.strftime("%H:%M")
 
+    reminder_text = f"Halo {patient_name}. Anda memiliki janji temu dengan {doctor_name} pada hari {appt_date} pukul {appt_time}."
+    
+    questionnaire_url = "https://example.com/survei-pra-kunjungan?id=123"
+    questionnaire_text = f"Silakan isi kuesioner pra-kunjungan di sini: {questionnaire_url}"
+
     return {
         "status": "success",
-        "report": f"Halo {patient_name}. Anda memiliki janji temu dengan {doctor_name} pada hari {appt_date} pukul {appt_time}.",
+        "report": f"{reminder_text}\n{questionnaire_text}",
     }
-
-def kirim_kuesioner_pra_kunjungan(id_pasien: str) -> dict:
-    """
-    Mengirimkan tautan kuesioner setelah memverifikasi keberadaan pasien di FHIR Datastore.
-    """
-    patient_info = get_fhir_resource(f"Patient/{id_pasien}")
-
-    if patient_info:
-        questionnaire_url = "https://example.com/survei-pra-kunjungan?id=123"
-        return {
-            "status": "success",
-            "report": f"Tautan ke kuesioner pra-kunjungan telah dikirim ke metode kontak yang terdaftar untuk pasien ID {id_pasien}. Anda juga bisa mengaksesnya di sini: {questionnaire_url}",
-        }
-    else:
-        return {
-            "status": "error",
-            "error_message": f"Tidak dapat mengirim kuesioner. Pasien dengan ID '{id_pasien}' tidak ditemukan.",
-        }
 
 # Root Agent Configuration
 root_agent = Agent(
@@ -147,12 +134,11 @@ root_agent = Agent(
     after_model_callback=log_model_response,
     instruction=(
         "Anda adalah asisten klinis yang siap membantu. Gunakan tool `SearchAgent` untuk menjawab pertanyaan umum dari pasien (seperti jam buka atau lokasi). "
-        "Gunakan tool `dapatkan_pengingat_janji_temu` untuk memberikan pengingat janji temu dan tool `kirim_kuesioner_pra_kunjungan` untuk mengirim kuesioner pra-kunjungan. "
+        "Gunakan tool `dapatkan_pengingat_janji_temu` untuk memeriksa jadwal janji temu pasien. "
         "Selalu minta Nomor Rekam Medis (MRN) pasien jika diperlukan. Bersikaplah sopan dan profesional."
     ),
     tools=[
-        dapatkan_pengingat_janji_temu, 
-        kirim_kuesioner_pra_kunjungan,
+        dapatkan_pengingat_janji_temu,
         agent_tool.AgentTool(agent=search_agent)
     ],
 )
