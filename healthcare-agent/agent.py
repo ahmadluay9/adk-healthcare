@@ -45,100 +45,123 @@ def get_gcp_token():
     credentials.refresh(auth_req)
     return credentials.token
 
-def get_fhir_resource(resource_path: str):
-    """Mengambil resource dari FHIR Datastore."""
+def make_fhir_request(method: str, resource_path: str, payload: dict = None):
+    """Membuat permintaan GET atau POST ke FHIR Datastore."""
     token = get_gcp_token()
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+    url = f"{BASE_FHIR_URL}/{resource_path}"
     try:
-        response = requests.get(f"{BASE_FHIR_URL}/{resource_path}", headers=headers)
-        response.raise_for_status()  # Akan raise error jika status code bukan 2xx
+        if method.upper() == 'GET':
+            response = requests.get(url, headers=headers)
+        elif method.upper() == 'POST':
+            response = requests.post(url, headers=headers, json=payload)
+        else:
+            raise ValueError("Metode HTTP tidak didukung.")
+        
+        response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error saat mengakses FHIR API: {e}")
+        if e.response is not None:
+            print(f"Response Body: {e.response.text}")
         return None
 
-# Functions for Patient Appointment Tools
-def dapatkan_pengingat_janji_temu(mrn: str) -> dict:
+# Functions to Handle Patient Appointment Tools
+def buat_janji_temu_baru(mrn: str, tanggal_lahir: str, nama_dokter: str, tanggal_dan_waktu: str) -> dict:
     """
-    Memberikan pengingat janji temu untuk MRN pasien yang diberikan.
+    Membuat janji temu baru setelah memverifikasi identitas pasien dan ketersediaan dokter.
     """
-    # Mencari pasien berdasarkan identifier (MRN) untuk mendapatkan FHIR ID
-    patient_bundle = get_fhir_resource(f"Patient?identifier={mrn}")
+    patient_bundle = make_fhir_request('GET', f"Patient?identifier={mrn}")
     if not patient_bundle or patient_bundle.get("total", 0) == 0:
-        return {
-            "status": "error",
-            "error_message": f"Maaf, pasien dengan MRN '{mrn}' tidak ditemukan.",
-        }
+        return {"status": "error", "error_message": f"Pasien dengan MRN '{mrn}' tidak ditemukan."}
+
+    patient_resource = patient_bundle["entry"][0]["resource"]
+    if patient_resource.get("birthDate") != tanggal_lahir:
+        return {"status": "error", "error_message": "Verifikasi gagal. Tanggal lahir tidak cocok."}
+    id_pasien = patient_resource["id"]
+
+    practitioner_bundle = make_fhir_request('GET', f"Practitioner?name={nama_dokter}")
+    if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": f"Dokter dengan nama '{nama_dokter}' tidak ditemukan."}
+    id_dokter = practitioner_bundle["entry"][0]["resource"]["id"]
+
+    try:
+        start_time = datetime.datetime.fromisoformat(tanggal_dan_waktu).astimezone(datetime.timezone.utc)
+        end_time = start_time + datetime.timedelta(minutes=30)
+    except ValueError:
+        return {"status": "error", "error_message": "Format tanggal dan waktu tidak valid. Gunakan format YYYY-MM-DDTHH:MM:SS."}
+
+    appointment_body = {
+        "resourceType": "Appointment", "status": "booked",
+        "start": start_time.isoformat(), "end": end_time.isoformat(),
+        "participant": [
+            {"actor": {"reference": f"Patient/{id_pasien}"}, "status": "accepted"},
+            {"actor": {"reference": f"Practitioner/{id_dokter}"}, "status": "accepted"}
+        ]
+    }
     
-    id_pasien = patient_bundle["entry"][0]["resource"]["id"]
+    new_appointment = make_fhir_request('POST', 'Appointment', payload=appointment_body)
+    if new_appointment:
+        return {"status": "success", "report": f"Janji temu baru dengan {nama_dokter} pada {start_time.strftime('%d %B %Y pukul %H:%M')} berhasil dibuat."}
+    else:
+        return {"status": "error", "error_message": "Gagal membuat janji temu di sistem."}
     
-    # Lanjutkan dengan id_pasien untuk mencari janji temu
+# Functions to Handle Appointment Reminders and Questionnaires
+def periksa_janji_temu_dan_kirim_kuesioner(mrn: str, tanggal_lahir: str) -> dict:
+    """
+    Memberikan pengingat janji temu dan tautan kuesioner setelah memverifikasi MRN dan tanggal lahir pasien.
+    """
+    patient_bundle = make_fhir_request('GET', f"Patient?identifier={mrn}")
+    if not patient_bundle or patient_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": f"Pasien dengan MRN '{mrn}' tidak ditemukan."}
+    
+    patient_resource = patient_bundle["entry"][0]["resource"]
+    if patient_resource.get("birthDate") != tanggal_lahir:
+        return {"status": "error", "error_message": "Verifikasi gagal. Tanggal lahir tidak cocok."}
+    
+    id_pasien = patient_resource["id"]
+    
     query = f"Appointment?actor=Patient/{id_pasien}&status=booked&_sort=date&_count=1&_include=Appointment:patient&_include=Appointment:practitioner"
-    bundle = get_fhir_resource(query)
+    bundle = make_fhir_request('GET', query)
 
     if not bundle or bundle.get("total", 0) == 0:
-        return {
-            "status": "error",
-            "error_message": f"Maaf, tidak ada janji temu yang akan datang untuk pasien dengan MRN '{mrn}'.",
-        }
+        return {"status": "error", "error_message": f"Tidak ada janji temu yang akan datang untuk pasien dengan MRN '{mrn}'."}
 
     appointment, patient, practitioner = None, None, None
     for entry in bundle.get("entry", []):
         resource = entry.get("resource", {})
-        resource_type = resource.get("resourceType")
-        if resource_type == "Appointment":
-            appointment = resource
-        elif resource_type == "Patient":
-            patient = resource
-        elif resource_type == "Practitioner":
-            practitioner = resource
+        if resource.get("resourceType") == "Appointment": appointment = resource
+        elif resource.get("resourceType") == "Patient": patient = resource
+        elif resource.get("resourceType") == "Practitioner": practitioner = resource
     
-    if not appointment:
-         return {"status": "error", "error_message": "Gagal menemukan detail janji temu di dalam respons."}
+    if not appointment: return {"status": "error", "error_message": "Gagal menemukan detail janji temu."}
 
     patient_name = patient['name'][0]['given'][0] if patient and 'name' in patient else 'Pasien'
-    doctor_name = "Dokter"
-    if practitioner and 'name' in practitioner:
-        name_info = practitioner['name'][0]
-        if 'text' in name_info:
-            doctor_name = name_info['text']
-        elif 'given' in name_info:
-            doctor_name = " ".join(name_info['given'])
-            if 'family' in name_info:
-                doctor_name += f" {name_info['family']}"
+    doctor_name = practitioner['name'][0]['text'] if practitioner and 'name' in practitioner and 'text' in practitioner['name'][0] else 'Dokter'
+    start_time = datetime.datetime.fromisoformat(appointment.get("start"))
     
-    start_time_str = appointment.get("start")
-    start_time = datetime.datetime.fromisoformat(start_time_str)
-    
-    appt_date = start_time.strftime("%A, %d %B %Y")
-    appt_time = start_time.strftime("%H:%M")
+    reminder_text = f"Halo {patient_name}. Anda memiliki janji temu dengan {doctor_name} pada hari {start_time.strftime('%A, %d %B %Y')} pukul {start_time.strftime('%H:%M')}."
+    questionnaire_text = f"Silakan isi kuesioner pra-kunjungan di sini: https://example.com/survei?id=123"
 
-    reminder_text = f"Halo {patient_name}. Anda memiliki janji temu dengan {doctor_name} pada hari {appt_date} pukul {appt_time}."
-    
-    questionnaire_url = "https://example.com/survei-pra-kunjungan?id=123"
-    questionnaire_text = f"Silakan isi kuesioner pra-kunjungan di sini: {questionnaire_url}"
-
-    return {
-        "status": "success",
-        "report": f"{reminder_text}\n{questionnaire_text}",
-    }
+    return {"status": "success", "report": f"{reminder_text}\n{questionnaire_text}"}
 
 # Root Agent Configuration
 root_agent = Agent(
-    name="agen_asisten_klinis",
-    model= model_name,
-    description=(
-        "Agen yang membantu keterlibatan pasien dan perencanaan pra-kunjungan dengan mencari informasi."
-    ),
-    before_model_callback=log_query_to_model,
-    after_model_callback=log_model_response,
+    name="agen_asisten_klinis", model=model_name,
+    description="Agen yang membantu pasien memeriksa dan membuat janji temu.",
+    before_model_callback=log_query_to_model, after_model_callback=log_model_response,
     instruction=(
-        "Anda adalah asisten klinis yang siap membantu. Gunakan tool `SearchAgent` untuk menjawab pertanyaan umum dari pasien (seperti jam buka atau lokasi). "
-        "Gunakan tool `dapatkan_pengingat_janji_temu` untuk memeriksa jadwal janji temu pasien. "
-        "Selalu minta Nomor Rekam Medis (MRN) pasien jika diperlukan. Bersikaplah sopan dan profesional."
+        "Anda adalah asisten klinis virtual yang efisien dan ramah. Tugas utama Anda adalah membantu pasien.\n"
+        "1. Untuk pertanyaan umum (jam buka, lokasi, daftar dokter), gunakan `SearchAgent`.\n"
+        "2. Untuk memeriksa jadwal yang sudah ada, gunakan alat `periksa_janji_temu_dan_kirim_kuesioner`.\n"
+        "3. Untuk membuat janji temu baru, gunakan alat `buat_janji_temu_baru`.\n"
+        "4. PENTING: Sebelum memeriksa atau membuat janji temu, Anda WAJIB meminta Nomor Rekam Medis (MRN) dan tanggal lahir pasien (format YYYY-MM-DD) untuk verifikasi.\n"
+        "5. Jika pasien bertanya tentang dokter tertentu, konfirmasi dulu ketersediaannya dengan `SearchAgent`, lalu tawarkan untuk memeriksa atau membuat janji temu.\n"
+        "6. Setelah berhasil menyelesaikan permintaan, selalu akhiri respons dengan bertanya, 'Ada lagi yang bisa saya bantu?'."
     ),
     tools=[
-        dapatkan_pengingat_janji_temu,
+        periksa_janji_temu_dan_kirim_kuesioner,
+        buat_janji_temu_baru,
         agent_tool.AgentTool(agent=search_agent)
     ],
 )
