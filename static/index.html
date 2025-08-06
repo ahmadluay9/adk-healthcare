@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rumah Sakit Sehat Selalu - Pelayanan Kesehatan Terpercaya</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles untuk font dan transisi yang mulus */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .section {
+            display: none; /* Semua section disembunyikan secara default */
+            animation: fadeIn 0.5s;
+        }
+        .section.active {
+            display: block; /* Section yang aktif akan ditampilkan */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Style untuk scrollbar (opsional, untuk estetika) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Style untuk Chat Popup */
+        .chat-popup {
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .chat-bubble-user {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+        }
+        .chat-bubble-agent {
+            background-color: #e5e7eb; /* bg-gray-200 */
+        }
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #9ca3af; /* bg-gray-400 */
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        /* Style untuk Modal Login */
+        .modal-backdrop {
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-blue-600 nav-link" data-target="beranda">
+                RS Sehat Selalu
+            </a>
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition duration-300 nav-link" data-target="beranda">Beranda</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition duration-300 nav-link" data-target="layanan">Layanan</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition duration-300 nav-link" data-target="dokter">Cari Dokter</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition duration-300 nav-link" data-target="tentang">Tentang Kami</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition duration-300 nav-link" data-target="kontak">Kontak</a>
+                <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300 shadow-lg nav-link" data-target="janji-temu">Buat Janji Temu</a>
+                <!-- Tombol Login/Logout -->
+                <div id="auth-container">
+                    <a href="#" id="login-button" class="border border-blue-600 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-50 transition duration-300">Login Pasien</a>
+                    <div id="logout-container" class="hidden items-center space-x-4">
+                        <span id="welcome-message" class="text-sm text-gray-700 font-medium"></span>
+                        <a href="#" id="logout-button" class="text-sm text-red-600 hover:underline">Logout</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white">
+            <a href="#" class="block py-2 px-6 text-sm text-gray-600 hover:bg-blue-50 nav-link" data-target="beranda">Beranda</a>
+            <a href="#" class="block py-2 px-6 text-sm text-gray-600 hover:bg-blue-50 nav-link" data-target="layanan">Layanan</a>
+            <a href="#" class="block py-2 px-6 text-sm text-gray-600 hover:bg-blue-50 nav-link" data-target="dokter">Cari Dokter</a>
+            <a href="#" class="block py-2 px-6 text-sm text-gray-600 hover:bg-blue-50 nav-link" data-target="tentang">Tentang Kami</a>
+            <a href="#" class="block py-2 px-6 text-sm text-gray-600 hover:bg-blue-50 nav-link" data-target="kontak">Kontak</a>
+            <a href="#" class="block py-4 px-6 text-sm bg-blue-600 text-white text-center rounded-b-lg nav-link" data-target="janji-temu">Buat Janji Temu</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Section: Beranda (Home) -->
+        <section id="beranda" class="section active">
+            <!-- Hero Section -->
+            <div class="relative bg-blue-700 text-white rounded-2xl shadow-2xl overflow-hidden p-8 md:p-16 text-center md:text-left">
+                <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image: url('https://placehold.co/1200x400/e0e7ff/3b82f6?text=Gedung+Rumah+Sakit');"></div>
+                <div class="relative z-10">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-4">Komitmen Kami untuk Kesehatan Anda</h1>
+                    <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto md:mx-0">Menyediakan pelayanan kesehatan berkualitas tinggi dengan sentuhan kepedulian dan teknologi terkini.</p>
+                    <a href="#" class="bg-white text-blue-600 font-bold px-8 py-3 rounded-full hover:bg-gray-100 transition duration-300 shadow-lg nav-link" data-target="layanan">Jelajahi Layanan Kami</a>
+                </div>
+            </div>
+
+            <!-- Fitur Unggulan -->
+            <div class="mt-16">
+                <h2 class="text-3xl font-bold text-center mb-10">Mengapa Memilih Kami?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Card 1 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                        <div class="bg-blue-100 text-blue-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-5.197-5.975M15 10a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Dokter Profesional</h3>
+                        <p class="text-gray-600">Tim dokter spesialis kami berpengalaman dan berdedikasi untuk memberikan perawatan terbaik.</p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                        <div class="bg-green-100 text-green-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Layanan 24 Jam</h3>
+                        <p class="text-gray-600">Unit Gawat Darurat (UGD) kami siap melayani Anda kapan saja, 24 jam sehari, 7 hari seminggu.</p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                        <div class="bg-purple-100 text-purple-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547a2 2 0 00-.547 1.806l.477 2.387a6 6 0 00.517 3.86l.158.318a6 6 0 00.517 3.86l2.387.477a2 2 0 001.806-.547a2 2 0 00.547-1.806l-.477-2.387a6 6 0 00-.517-3.86l-.158-.318a6 6 0 01-.517-3.86l-2.387-.477a2 2 0 01-.547-1.806l.477-2.387a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.806.547a2 2 0 01.547 1.806l-.477 2.387a6 6 0 01-3.86.517l-.318.158a6 6 0 01-3.86.517l-2.387-.477a2 2 0 01-1.806-.547z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Teknologi Modern</h3>
+                        <p class="text-gray-600">Kami menggunakan peralatan medis canggih untuk diagnosis dan pengobatan yang akurat.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Layanan (Services) -->
+        <section id="layanan" class="section">
+            <h2 class="text-3xl font-bold text-center mb-12">Layanan Medis Kami</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Contoh Layanan -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/3b82f6/ffffff?text=Poli+Jantung" alt="[Gambar Poli Jantung]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Poli Jantung (Kardiologi)</h3>
+                        <p class="text-gray-600">Penanganan komprehensif untuk penyakit jantung dan pembuluh darah.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/10b981/ffffff?text=Poli+Anak" alt="[Gambar Poli Anak]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Poli Anak (Pediatri)</h3>
+                        <p class="text-gray-600">Perawatan kesehatan anak mulai dari bayi hingga remaja oleh dokter spesialis.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/8b5cf6/ffffff?text=Penyakit+Dalam" alt="[Gambar Poli Penyakit Dalam]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Poli Penyakit Dalam</h3>
+                        <p class="text-gray-600">Diagnosis dan penanganan berbagai penyakit organ dalam pada pasien dewasa.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/ef4444/ffffff?text=UGD+24+Jam" alt="[Gambar UGD 24 Jam]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Unit Gawat Darurat (UGD)</h3>
+                        <p class="text-gray-600">Siap 24 jam untuk menangani kasus-kasus darurat medis dengan cepat dan tepat.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/f97316/ffffff?text=Radiologi" alt="[Gambar Radiologi]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Radiologi & Pencitraan</h3>
+                        <p class="text-gray-600">Menyediakan layanan X-Ray, CT Scan, MRI, dan USG dengan teknologi modern.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/ec4899/ffffff?text=Laboratorium" alt="[Gambar Laboratorium]" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Laboratorium Klinik</h3>
+                        <p class="text-gray-600">Pemeriksaan laboratorium yang akurat untuk menunjang diagnosis dokter.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Cari Dokter -->
+        <section id="dokter" class="section">
+            <h2 class="text-3xl font-bold text-center mb-12">Temukan Dokter Kami</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Contoh Profil Dokter -->
+                <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
+                    <img src="https://placehold.co/200x200/e0e7ff/3b82f6?text=Dokter+A" alt="[Foto dr. Budi Santoso, Sp.JP]" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-blue-200">
+                    <h3 class="text-lg font-bold">dr. Budi Santoso, Sp.JP</h3>
+                    <p class="text-blue-600 font-semibold">Spesialis Jantung</p>
+                    <button class="mt-4 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-200 transition">Lihat Profil</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
+                    <img src="https://placehold.co/200x200/d1fae5/10b981?text=Dokter+B" alt="[Foto dr. Citra Lestari, Sp.A]" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-green-200">
+                    <h3 class="text-lg font-bold">dr. Citra Lestari, Sp.A</h3>
+                    <p class="text-green-600 font-semibold">Spesialis Anak</p>
+                    <button class="mt-4 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-200 transition">Lihat Profil</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
+                    <img src="https://placehold.co/200x200/f3e8ff/8b5cf6?text=Dokter+C" alt="[Foto dr. Ahmad Dahlan, Sp.PD]" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-purple-200">
+                    <h3 class="text-lg font-bold">dr. Ahmad Dahlan, Sp.PD</h3>
+                    <p class="text-purple-600 font-semibold">Spesialis Penyakit Dalam</p>
+                    <button class="mt-4 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-purple-200 transition">Lihat Profil</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
+                    <img src="https://placehold.co/200x200/fee2e2/ef4444?text=Dokter+D" alt="[Foto dr. Rina Wijaya, Sp.OG]" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-red-200">
+                    <h3 class="text-lg font-bold">dr. Rina Wijaya, Sp.OG</h3>
+                    <p class="text-red-600 font-semibold">Spesialis Kandungan</p>
+                    <button class="mt-4 bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-200 transition">Lihat Profil</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Tentang Kami -->
+        <section id="tentang" class="section">
+            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-4">Tentang Rumah Sakit Sehat Selalu</h2>
+                        <p class="text-gray-600 mb-6">Didirikan pada tahun 2005, Rumah Sakit Sehat Selalu berawal dari sebuah klinik sederhana dengan visi untuk memberikan akses kesehatan yang mudah dan terjangkau bagi masyarakat. Kini, kami telah berkembang menjadi rumah sakit rujukan dengan fasilitas lengkap dan tim medis yang kompeten.</p>
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-600">Visi Kami</h3>
+                                <p class="text-gray-600">Menjadi rumah sakit terdepan dalam pelayanan kesehatan yang inovatif, profesional, dan berpusat pada pasien.</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-600">Misi Kami</h3>
+                                <ul class="list-disc list-inside text-gray-600">
+                                    <li>Memberikan pelayanan medis paripurna dengan standar kualitas tertinggi.</li>
+                                    <li>Mengembangkan sumber daya manusia yang unggul dan profesional.</li>
+                                    <li>Mengutamakan keselamatan dan kepuasan pasien.</li>
+                                    <li>Menggunakan teknologi medis terkini untuk diagnosis dan terapi.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <img src="https://placehold.co/600x400/e0e7ff/3b82f6?text=Tim+Medis+Kami" alt="[Gambar Tim Medis]" class="rounded-lg shadow-md w-full h-auto">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Kontak -->
+        <section id="kontak" class="section">
+            <h2 class="text-3xl font-bold text-center mb-12">Hubungi Kami</h2>
+            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <!-- Informasi Kontak -->
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6">Informasi Kontak</h3>
+                        <div class="space-y-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
+                                <div>
+                                    <h4 class="font-semibold">Alamat</h4>
+                                    <p class="text-gray-600">Jl. Kesehatan No. 123, Jakarta Pusat, DKI Jakarta, 10110</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></div>
+                                <div>
+                                    <h4 class="font-semibold">Telepon</h4>
+                                    <p class="text-gray-600">UGD: (021) 123-4567</p>
+                                    <p class="text-gray-600">Informasi: (021) 123-4568</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                                <div>
+                                    <h4 class="font-semibold">Email</h4>
+                                    <p class="text-gray-600">info@rssehatselalu.co.id</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Peta Lokasi -->
+                    <div>
+                         <h3 class="text-2xl font-bold mb-6">Peta Lokasi</h3>
+                         <div class="rounded-lg overflow-hidden shadow-md">
+                            <!-- Ganti dengan iframe Google Maps asli jika perlu -->
+                            <img src="https://placehold.co/600x400/e2e8f0/334155?text=Peta+Lokasi+Rumah+Sakit" alt="[Peta Lokasi Rumah Sakit]" class="w-full h-full object-cover">
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Buat Janji Temu -->
+        <section id="janji-temu" class="section">
+            <h2 class="text-3xl font-bold text-center mb-12">Buat Janji Temu Online</h2>
+            <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+                <p class="text-center text-gray-600 mb-8">Silakan isi formulir di bawah ini untuk membuat janji temu. Tim kami akan segera menghubungi Anda untuk konfirmasi.</p>
+                <form action="#" method="POST">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="nama" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                            <input type="text" name="nama" id="nama" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="telepon" class="block text-sm font-medium text-gray-700">Nomor Telepon</label>
+                            <input type="tel" name="telepon" id="telepon" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="email" class="block text-sm font-medium text-gray-700">Alamat Email</label>
+                        <input type="email" name="email" id="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="layanan-pilihan" class="block text-sm font-medium text-gray-700">Pilih Layanan/Poli</label>
+                        <select id="layanan-pilihan" name="layanan-pilihan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                            <option value="">-- Pilih salah satu --</option>
+                            <option value="jantung">Poli Jantung (Kardiologi)</option>
+                            <option value="anak">Poli Anak (Pediatri)</option>
+                            <option value="penyakit-dalam">Poli Penyakit Dalam</option>
+                            <option value="kandungan">Poli Kandungan (Obstetri & Ginekologi)</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="mt-6">
+                        <label for="tanggal" class="block text-sm font-medium text-gray-700">Tanggal Kunjungan</label>
+                        <input type="date" name="tanggal" id="tanggal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="pesan" class="block text-sm font-medium text-gray-700">Pesan Tambahan (opsional)</label>
+                        <textarea id="pesan" name="pesan" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <button type="submit" class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-3 rounded-full hover:bg-blue-700 transition duration-300 shadow-lg">
+                            Kirim Permintaan Janji Temu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">RS Sehat Selalu</h3>
+                    <p class="text-gray-400">Pelayanan kesehatan terpercaya untuk Anda dan keluarga.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Tautan Cepat</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white nav-link" data-target="beranda">Beranda</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white nav-link" data-target="layanan">Layanan</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white nav-link" data-target="dokter">Cari Dokter</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white nav-link" data-target="janji-temu">Buat Janji Temu</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Kontak Kami</h4>
+                    <p class="text-gray-400">Jl. Kesehatan No. 123, Jakarta</p>
+                    <p class="text-gray-400">info@rssehatselalu.co.id</p>
+                    <p class="text-gray-400">(021) 123-4568</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Ikuti Kami</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.59 0 0 .59 0 1.325v21.35C0 23.41.59 24 1.325 24H12.82v-9.29H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.735 0 1.325-.59 1.325-1.325V1.325C24 .59 23.41 0 22.675 0z"/></svg></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.74 0 8.333.012 7.053.072 2.695.272.273 2.69.073 7.052.012 8.333 0 8.74 0 12s.012 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98C8.333 23.988 8.74 24 12 24s3.667-.012 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98C23.988 15.667 24 15.26 24 12s-.012-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98C15.667.012 15.26 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.223.085c.645 1.956 2.523 3.379 4.746 3.419-1.717 1.336-3.881 2.135-6.225 2.135-.404 0-.799-.024-1.188-.07A13.94 13.94 0 007.557 20c8.454 0 13.08-6.873 13.08-12.84 0-.195-.005-.39-.014-.583a9.48 9.48 0 002.322-2.392z"/></svg></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400 text-sm">
+                &copy; <span id="year"></span> Rumah Sakit Sehat Selalu. Semua Hak Cipta Dilindungi.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Login -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all" id="login-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Login Pasien</h2>
+                <button id="close-modal-button" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <p class="text-gray-600 mb-6">Silakan masuk menggunakan Username dan Password Anda.</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan username Anda" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan password Anda" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Popup -->
+    <div id="chat-widget-container" class="fixed bottom-5 right-5 z-50">
+        <!-- Tombol Chat -->
+        <button id="chat-open-button" class="bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition-transform transform hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        </button>
+
+        <!-- Jendela Chat -->
+        <div id="chat-popup" class="hidden chat-popup absolute bottom-20 right-0 w-80 sm:w-96 h-[70vh] max-h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col transform origin-bottom-right">
+            <!-- Header Chat -->
+            <div class="bg-blue-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="font-bold text-lg">Asisten Klinis Virtual</h3>
+                <button id="chat-close-button" class="hover:bg-blue-700 p-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Area Pesan -->
+            <div id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
+                <!-- Pesan Awal -->
+                <div class="flex justify-start">
+                    <div class="chat-bubble-agent p-3 rounded-lg max-w-xs">
+                        <p>Halo! Saya asisten klinis virtual. Ada yang bisa saya bantu?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Pesan -->
+            <div class="p-4 border-t border-gray-200">
+                <form id="chat-form" class="flex items-center space-x-2">
+                    <input type="text" id="chat-input" placeholder="Ketik pesan Anda..." class="flex-grow border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Variabel Global ---
+            let currentUser = null; // Menyimpan data user yang login
+            const ADK_SERVER_URL = 'http://localhost:8000'; // URL server ADK
+
+            // --- Elemen DOM ---
+            const loginButton = document.getElementById('login-button');
+            const logoutContainer = document.getElementById('logout-container');
+            const logoutButton = document.getElementById('logout-button');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const loginModal = document.getElementById('login-modal');
+            const closeModalButton = document.getElementById('close-modal-button');
+            const loginForm = document.getElementById('login-form');
+            const chatLoginStatus = document.createElement('div');
+            chatLoginStatus.className = 'text-xs text-center text-gray-500 p-2 border-b border-gray-200';
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.section');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const yearSpan = document.getElementById('year');
+            const chatOpenButton = document.getElementById('chat-open-button');
+            const chatPopup = document.getElementById('chat-popup');
+            const chatCloseButton = document.getElementById('chat-close-button');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+
+            // --- Logika Login & UI ---
+            function updateUIForLogin() {
+                loginButton.classList.add('hidden');
+                logoutContainer.classList.remove('hidden');
+                welcomeMessage.textContent = `Selamat datang, ${currentUser.username}!`;
+                
+                const chatHeader = document.querySelector('#chat-popup > div:first-child');
+                chatLoginStatus.textContent = `Login sebagai ${currentUser.username}`;
+                if (chatHeader && !document.querySelector('.chat-login-status')) {
+                    chatLoginStatus.classList.add('chat-login-status');
+                    chatHeader.insertAdjacentElement('afterend', chatLoginStatus);
+                }
+            }
+
+            function updateUIForLogout() {
+                loginButton.classList.remove('hidden');
+                logoutContainer.classList.add('hidden');
+                welcomeMessage.textContent = '';
+                if (chatLoginStatus.parentNode) {
+                    chatLoginStatus.remove();
+                }
+            }
+
+            loginButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.classList.remove('hidden');
+            });
+
+            closeModalButton.addEventListener('click', () => loginModal.classList.add('hidden'));
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.classList.add('hidden');
+                }
+            });
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                // Password tidak digunakan di frontend, hanya untuk simulasi
+                
+                // Di aplikasi nyata, ini akan menjadi panggilan fetch ke endpoint login
+                // yang memverifikasi username & password dan mengembalikan data pasien.
+                alert(`Login sebagai '${username}' berhasil (simulasi).`);
+                currentUser = {
+                    username: username,
+                    // Di aplikasi nyata, backend akan mengembalikan data terkait
+                    // seperti nama lengkap, tanggal lahir, dll.
+                };
+                
+                updateUIForLogin();
+                loginModal.classList.add('hidden');
+            });
+
+            logoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentUser = null;
+                updateUIForLogout();
+                alert('Anda telah logout.');
+            });
+
+            // --- Skrip Navigasi Halaman ---
+            function showSection(targetId) {
+                sections.forEach(section => {
+                    section.id === targetId ? section.classList.add('active') : section.classList.remove('active');
+                });
+                window.scrollTo(0, 0);
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    showSection(targetId);
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            
+            if (yearSpan) {
+                yearSpan.textContent = new Date().getFullYear();
+            }
+            
+            showSection('beranda');
+
+            // --- Skrip Logika Chat ---
+            const appNameChat = 'healthcare-agent';
+            let sessionIdChat = `session-${Date.now()}`;
+            
+            chatOpenButton.addEventListener('click', () => chatPopup.classList.toggle('hidden'));
+            chatCloseButton.addEventListener('click', () => chatPopup.classList.add('hidden'));
+
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = `${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-agent'} p-3 rounded-lg max-w-xs`;
+                bubbleDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                
+                messageDiv.appendChild(bubbleDiv);
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function showTypingIndicator() {
+                if (document.getElementById('typing-indicator')) return;
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typing-indicator';
+                typingDiv.className = 'flex justify-start';
+                typingDiv.innerHTML = `
+                    <div class="chat-bubble-agent p-3 rounded-lg">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+
+            async function sendMessageToAgent(message) {
+                showTypingIndicator();
+                
+                const finalMessage = message;
+
+                try {
+                    sessionIdChat = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    await fetch(`${ADK_SERVER_URL}/apps/${appNameChat}/users/user/sessions`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({session: {id: sessionIdChat}})
+                    });
+
+                    const response = await fetch(`${ADK_SERVER_URL}/run_sse`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            app_name: appNameChat,
+                            session_id: sessionIdChat,
+                            request: finalMessage
+                        })
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let agentResponse = '';
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const events = buffer.split('\n\n');
+                        buffer = events.pop();
+
+                        for (const eventStr of events) {
+                            if (eventStr.startsWith('data:')) {
+                                try {
+                                    const data = JSON.parse(eventStr.substring(5));
+                                    if (data.content && data.content.parts) {
+                                        const textPart = data.content.parts.find(p => p.text);
+                                        if (textPart && data.author === 'agen_asisten_klinis') {
+                                            agentResponse += textPart.text;
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Abaikan
+                                }
+                            }
+                        }
+                    }
+                    
+                    removeTypingIndicator();
+                    if (agentResponse) {
+                         addMessage(agentResponse, 'agent');
+                    }
+
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    removeTypingIndicator();
+                    addMessage("Maaf, terjadi masalah koneksi.", 'agent');
+                }
+            }
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const messageText = chatInput.value.trim();
+                if (messageText) {
+                    addMessage(messageText, 'user');
+                    sendMessageToAgent(messageText);
+                    chatInput.value = '';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
