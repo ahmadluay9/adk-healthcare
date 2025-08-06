@@ -1,5 +1,5 @@
 import os
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.tools import VertexAiSearchTool
 from google.genai import types
 from dotenv import load_dotenv
@@ -13,9 +13,9 @@ vertexai_search_tool = VertexAiSearchTool(
 )
 
 # --- Definisi Sub-Agen ---
-search_agent = LlmAgent(
+general_search_agent = LlmAgent(
     model= model_name,
-    name='SearchAgent',
+    name='GeneralSearchAgent',
     description="Agen untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar dokter yang tersedia.",
     instruction="""
     Anda adalah asisten pencari informasi. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan umum dari pengguna.
@@ -24,4 +24,23 @@ search_agent = LlmAgent(
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
     ),
+    output_key="general_search_result"
+)
+
+search_advice_agent = LlmAgent(
+    name="SearchAdviceAgent",
+    model="gemini-2.5-flash-lite",
+    instruction="""
+    Anda adalah asisten AI yang bertugas menanyakan kepada pasien apakah mereka perlu bantuan lainnya.
+    """,
+    description="Menanyakan apakah ada yang bisa dibantu lebih lanjut.",
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2
+    ),
+)
+
+search_agent = SequentialAgent(
+    name="SearchAgent",
+    sub_agents=[general_search_agent, search_advice_agent],
+    description="Agen yang mencari informasi umum tentang rumah sakit berdasarkan pertanyaan pengguna.",
 )

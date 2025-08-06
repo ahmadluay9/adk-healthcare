@@ -1,6 +1,5 @@
 import os
 from google.adk.agents import LlmAgent, SequentialAgent
-from google.adk.tools import google_search
 from google.genai import types
 from dotenv import load_dotenv
 from ...tools import model_name

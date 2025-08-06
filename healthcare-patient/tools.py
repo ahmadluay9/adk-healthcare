@@ -106,9 +106,9 @@ def periksa_janji_temu_dan_kirim_kuesioner(nama_depan: Optional[str] = None, nam
     patient_name = patient['name'][0]['given'][0] if patient and 'name' in patient else 'Pasien'
     doctor_name = practitioner['name'][0]['text'] if practitioner and 'name' in practitioner and 'text' in practitioner['name'][0] else 'Dokter'
     start_time = datetime.datetime.fromisoformat(appointment.get("start"))
-    reminder_text = f"Halo {patient_name}. Anda memiliki janji temu dengan {doctor_name} pada hari {start_time.strftime('%A, %d %B %Y')} pukul {start_time.strftime('%H:%M')}."
+    reminder_text = f"Halo **{patient_name}**. Anda memiliki janji temu dengan **{doctor_name}** pada hari **{start_time.strftime('%A, %d %B %Y')}** pukul **{start_time.strftime('%H:%M')}**."
     questionnaire_text = f"Silakan isi kuesioner pra-kunjungan di sini: https://example.com/survei?id=123"
-    return {"status": "success", "report": f"{reminder_text}\n{questionnaire_text}"}
+    return {"status": "success", "report": f"{reminder_text}\n \n{questionnaire_text}\n \n Ada lagi yang bisa saya bantu?"}
 
 # Function to create a new appointment after verification
 def buat_janji_temu_baru(nama_dokter: str, tanggal_dan_waktu: str, nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
