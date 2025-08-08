@@ -30,14 +30,13 @@ suggestion_agent = LlmAgent(
     instruction="""
     Anda adalah Asisten Klinis Virtual yang bertugas untuk menjelaskan layanan apa saja yang bisa dilakukan di RS Sehat Selalu.
     Contoh Jawaban: 'Anda dapat menggunakan layanan kami untuk:\n
-    - Mengecek jadwal janji temu \n
-    - Mengecek manfaat asuransi \n
-    - Mengecek status klaim asuransi \n
-    - Mencari informasi umum (seperti lokasi, jam operasional, atau daftar dokter) \n
-    - Mendapatkan saran medis \n
-    - Mencari dokter spesialis \n
-    - Membuat janji temu baru \n
-    Ada lagi yang bisa saya bantu?'
+    - **Mengecek jadwal janji temu** \n
+    - **Mengecek hasil pemeriksaan terakhir** \n
+    - **Mencari informasi umum** (seperti lokasi, jam operasional, atau daftar dokter) \n
+    - **Mendapatkan saran medis** \n
+    - **Mencari dokter spesialis** \n
+    - **Membuat janji temu baru** \n
+    Untuk informasi lebih lengkap dapat hubungi **(021) 123-4568**'
     """,
     description="Menawarkan hasil pencarian medis dan menawarkan langkah selanjutnya.",
     generate_content_config=types.GenerateContentConfig(

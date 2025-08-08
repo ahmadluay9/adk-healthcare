@@ -135,6 +135,21 @@ def buat_janji_temu_baru(nama_dokter: str, tanggal_dan_waktu: str, nama_depan: O
     return {"status": "error", "error_message": "Gagal membuat janji temu di sistem."}
 
 # Function to check insurance benefits after verification
+def cek_program_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+    """Memeriksa program asuransi pasien setelah verifikasi."""
+    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+    if error: return error
+    id_pasien = patient_resource["id"]
+
+    coverage_bundle = make_fhir_request('GET', f"Coverage?beneficiary=Patient/{id_pasien}")
+    if not coverage_bundle or coverage_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
+    
+    coverage = coverage_bundle["entry"][0]["resource"]
+    plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
+    return {"status": "success", "report": f"Anda terdaftar dalam program asuransi **'{plan_name}'**."}
+
+# Function to check insurance benefits after verification
 def cek_manfaat_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
     """Memeriksa manfaat asuransi pasien setelah verifikasi."""
     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
@@ -146,7 +161,7 @@ def cek_manfaat_asuransi(nama_depan: Optional[str] = None, nama_belakang: Option
         return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
     
     coverage = coverage_bundle["entry"][0]["resource"]
-    plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Tidak ada nama program")
+    plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
     status = coverage.get("status", "tidak diketahui")
     return {"status": "success", "report": f"Anda terdaftar dalam program asuransi '{plan_name}' dengan status '{status}'. Untuk detail manfaat lebih lanjut, silakan hubungi penyedia asuransi Anda."}
 
@@ -167,3 +182,33 @@ def cek_status_klaim(nama_depan: Optional[str] = None, nama_belakang: Optional[s
     currency = claim.get("total", {}).get("currency", "")
     created_date = datetime.datetime.fromisoformat(claim.get("created")).strftime('%d %B %Y')
     return {"status": "success", "report": f"Klaim terakhir Anda pada tanggal {created_date} sebesar {total_value} {currency} saat ini memiliki status '{status}'."}
+
+# Function to check last diagnosis
+def cek_diagnosis_terakhir(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+    """Memeriksa diagnosis terakhir pasien dari riwayat kunjungan setelah verifikasi."""
+    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+    if error: return error
+    id_pasien = patient_resource["id"]
+
+    # Mencari Encounter (kunjungan) terakhir
+    encounter_bundle = make_fhir_request('GET', f"Encounter?patient=Patient/{id_pasien}&_sort=-date&_count=1")
+    if not encounter_bundle or encounter_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": "Tidak ditemukan riwayat kunjungan untuk pasien ini."}
+
+    encounter = encounter_bundle["entry"][0]["resource"]
+
+    diagnosis_text = "Diagnosis tidak tercatat."
+    # Prioritas 1: Cek kolom 'diagnosis' (standar)
+    if "diagnosis" in encounter and len(encounter["diagnosis"]) > 0:
+        condition_ref = encounter["diagnosis"][0].get("condition", {}).get("reference")
+        if condition_ref:
+            condition_resource = make_fhir_request('GET', condition_ref)
+            if condition_resource and "code" in condition_resource:
+                diagnosis_text = condition_resource["code"].get("text", diagnosis_text)
+    # Prioritas 2: Jika tidak ada, cek kolom 'reasonCode' (alternatif)
+    elif "reasonCode" in encounter and len(encounter["reasonCode"]) > 0:
+        diagnosis_text = encounter["reasonCode"][0].get("text", diagnosis_text)
+
+    patient_name = patient_resource.get("name", [{}])[0].get("given", ["Pasien"])[0]
+    
+    return {"status": "success", "report": f"Halo {patient_name}. Berdasarkan kunjungan terakhir Anda, diagnosis yang tercatat adalah: {diagnosis_text}."}
