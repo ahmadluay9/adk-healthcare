@@ -49,3 +49,6 @@ substitutions:
   _SERVICE_NAME: 'healthcare-patient-service'
   _REGION: 'asia-southeast2'
   _SECRET_ID: 'healthcare-patient-env'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
