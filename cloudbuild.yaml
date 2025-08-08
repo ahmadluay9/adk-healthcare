@@ -2,11 +2,6 @@ steps:
   # Langkah 1: Akses Rahasia dari Secret Manager
   # Langkah ini mengambil variabel lingkungan Anda (dari file .env) yang telah disimpan dengan aman di Google Secret Manager
   # dan menuliskannya ke dalam file .env sementara yang akan digunakan oleh Cloud Run.
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - 'gcloud secrets versions access latest --secret="${_SECRET_ID}" > .env'
 
   # Langkah 2: Bangun (Build) Container Image
   # Menggunakan Dockerfile di direktori Anda untuk membangun sebuah container image.
@@ -38,7 +33,6 @@ steps:
       - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
       - '--region=${_REGION}'
       - '--allow-unauthenticated'
-      - '--env-vars-from-file=.env'
 
 # Daftar image yang akan disimpan di Artifact Registry setelah build berhasil.
 images:
