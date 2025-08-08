@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asisten Klinis Virtual</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Style untuk scrollbar */
+        #chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Style untuk bubble chat dan indikator mengetik */
+        .chat-bubble-user {
+            background-color: #2563eb;
+            color: white;
+        }
+        .chat-bubble-agent {
+            background-color: #e5e7eb;
+        }
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        .mic-listening {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <!-- Jendela Chat Utama -->
+    <div id="chat-container" class="w-full max-w-2xl h-[90vh] max-h-[700px] bg-white rounded-2xl shadow-2xl flex flex-col">
+        <!-- Header Chat -->
+        <div class="bg-blue-600 text-white p-4 rounded-t-2xl">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Asisten Klinis Virtual</h3>
+                    <p class="text-sm opacity-80">Online</p>
+                </div>
+            </div>
+            <!-- Tampilan User ID dan Session ID -->
+            <div class="mt-2 text-xs opacity-70 space-y-1">
+                <p><strong>User ID:</strong> <span id="user-id-display"></span></p>
+                <p><strong>Session ID:</strong> <span id="session-id-display"></span></p>
+            </div>
+        </div>
+
+        <!-- Area Pesan -->
+        <div id="chat-messages" class="flex-grow p-6 space-y-4 overflow-y-auto">
+            <!-- Pesan Awal -->
+            <div class="flex justify-start">
+                <div class="chat-bubble-agent p-3 rounded-lg max-w-md">
+                    <p>Halo! Saya adalah asisten klinis virtual dari RS Sehat Selalu. Ada yang bisa saya bantu hari ini?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Pesan -->
+        <div class="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="chat-input" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow bg-gray-100 border-transparent rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Tombol Mikrofon -->
+                <button type="button" id="mic-button" class="bg-gray-200 text-gray-600 p-3 rounded-full hover:bg-gray-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                </button>
+                <button type="submit" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:bg-blue-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Variabel Konfigurasi ---
+            const CLOUD_RUN_URL = 'https://healthcare-patient-service-158103152291.asia-southeast2.run.app';
+            const APP_NAME = 'healthcare-patient';
+            const USER_ID = `user-${Date.now()}`;
+            let sessionId = `session-${Date.now()}`;
+
+            // --- Elemen DOM ---
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const micButton = document.getElementById('mic-button');
+            const userIdDisplay = document.getElementById('user-id-display');
+            const sessionIdDisplay = document.getElementById('session-id-display');
+            
+            // Tampilkan ID di UI
+            userIdDisplay.textContent = USER_ID;
+            sessionIdDisplay.textContent = sessionId;
+
+            // --- Logika Speech Recognition ---
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'id-ID';
+                recognition.interimResults = false;
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    chatInput.value = transcript;
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error:", event.error);
+                    alert("Maaf, terjadi error pada pengenalan suara.");
+                };
+                
+                recognition.onend = () => {
+                    micButton.classList.remove('bg-red-500', 'text-white', 'mic-listening');
+                };
+
+                micButton.addEventListener('click', () => {
+                    micButton.classList.add('bg-red-500', 'text-white', 'mic-listening');
+                    recognition.start();
+                });
+
+            } else {
+                micButton.disabled = true;
+                alert("Maaf, browser Anda tidak mendukung input suara.");
+            }
+
+            // --- Logika Chat ---
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = `${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-agent'} p-3 rounded-lg max-w-md`;
+                bubbleDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                
+                messageDiv.appendChild(bubbleDiv);
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function showTypingIndicator() {
+                if (document.getElementById('typing-indicator')) return;
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typing-indicator';
+                typingDiv.className = 'flex justify-start';
+                typingDiv.innerHTML = `
+                    <div class="chat-bubble-agent p-3 rounded-lg">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+
+            async function sendMessageToAgent(message) {
+                showTypingIndicator();
+                chatForm.querySelector('button[type="submit"]').disabled = true;
+
+                try {
+                    await fetch(`${CLOUD_RUN_URL}/apps/${APP_NAME}/users/${USER_ID}/sessions/${sessionId}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({})
+                    });
+
+                    const response = await fetch(`${CLOUD_RUN_URL}/run_sse`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            app_name: APP_NAME,
+                            user_id: USER_ID,
+                            session_id: sessionId,
+                            new_message: {
+                                role: "user",
+                                parts: [{ "text": message }]
+                            },
+                            streaming: false
+                        })
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                      // 1. Get the response as raw text instead of trying to parse as JSON directly.
+                    const responseText = await response.text();
+                    
+                    // 2. Clean the text by removing the "data: " prefix.
+                    // We'll also trim any whitespace just in case.
+                    const jsonString = responseText.startsWith('data: ') 
+                        ? responseText.substring(6).trim() 
+                        : responseText.trim();
+                    
+                    // 3. Now, parse the cleaned string.
+                    const result = JSON.parse(jsonString);
+
+                    removeTypingIndicator();
+                    
+                    let agentResponse = "Maaf, saya tidak dapat memproses respons saat ini.";
+                    if (result && result.content && result.content.parts) {
+                        const textPart = result.content.parts.find(p => p.text);
+                        if (textPart) agentResponse = textPart.text;
+                    }
+                    addMessage(agentResponse, 'agent');
+
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    removeTypingIndicator();
+                    addMessage("Maaf, terjadi masalah koneksi ke server. Pastikan server ADK berjalan dengan flag CORS yang benar.", 'agent');
+                } finally {
+                    chatForm.querySelector('button[type="submit"]').disabled = false;
+                }
+            }
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const messageText = chatInput.value.trim();
+                if (messageText) {
+                    addMessage(messageText, 'user');
+                    sendMessageToAgent(messageText);
+                    chatInput.value = '';
+                }
+            });
+            
+            // FIX: Menambahkan event listener untuk tombol Enter
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Mencegah baris baru
+                    chatForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 adk-healthcare/
 ├── README.md
 ├── .gitignore
-├── healthcare-agent/
+├── healthcare-patient/
 │   ├── sub_agents/
 │   │   ├── general_question_search/
 │   │   │   ├── __init.py__
@@ -21,6 +21,12 @@ adk-healthcare/
 │   │   │   ├── __init.py__
 │   │   │   └── agent.py 
 │   │   ├── check_claim_status/
+│   │   │   ├── __init.py__
+│   │   │   └── agent.py 
+│   │   ├── patient_verification/
+│   │   │   ├── __init.py__
+│   │   │   └── agent.py 
+│   │   ├── doctor_search/
 │   │   │   ├── __init.py__
 │   │   │   └── agent.py 
 │   ├── __init.py__

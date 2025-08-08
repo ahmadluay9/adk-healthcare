@@ -1,0 +1,51 @@
+steps:
+  # Langkah 1: Akses Rahasia dari Secret Manager
+  # Langkah ini mengambil variabel lingkungan Anda (dari file .env) yang telah disimpan dengan aman di Google Secret Manager
+  # dan menuliskannya ke dalam file .env sementara yang akan digunakan oleh Cloud Run.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'gcloud secrets versions access latest --secret="${_SECRET_ID}" > .env'
+
+  # Langkah 2: Bangun (Build) Container Image
+  # Menggunakan Dockerfile di direktori Anda untuk membangun sebuah container image.
+  # Image ini diberi tag dengan ID commit unik untuk pelacakan versi.
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '.'
+
+  # Langkah 3: Dorong (Push) Container Image
+  # Mendorong image yang baru saja dibangun ke Google Artifact Registry,
+  # repositori pribadi untuk container Anda.
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+
+  # Langkah 4: Deploy ke Cloud Run
+  # Mengambil image dari Artifact Registry dan mendeploy-nya sebagai revisi baru
+  # ke layanan Cloud Run Anda. Langkah ini juga menerapkan semua variabel lingkungan dari file .env yang diambil sebelumnya.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '--region=${_REGION}'
+      - '--allow-unauthenticated'
+      - '--env-vars-from-file=.env'
+
+# Daftar image yang akan disimpan di Artifact Registry setelah build berhasil.
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+
+# Variabel substitusi yang akan Anda atur di dalam Trigger Cloud Build.
+substitutions:
+  _SERVICE_NAME: 'healthcare-patient-service'
+  _REGION: 'asia-southeast2'
+  _SECRET_ID: 'healthcare-patient-env'
