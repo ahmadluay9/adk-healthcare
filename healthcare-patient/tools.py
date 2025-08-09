@@ -24,6 +24,7 @@ def get_gcp_token():
     credentials.refresh(auth_req)
     return credentials.token
 
+# Function to make FHIR API requests
 def make_fhir_request(method: str, resource_path: str, payload: dict = None):
     """Membuat permintaan GET atau POST ke FHIR Datastore."""
     token = get_gcp_token()
@@ -44,7 +45,7 @@ def make_fhir_request(method: str, resource_path: str, payload: dict = None):
         if e.response is not None:
             print(f"Response Body: {e.response.text}")
         return None
-    
+
 # Function to verify patient identity using MRN or name and birthdate
 def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None):
     """Memverifikasi identitas pasien menggunakan MRN (prioritas) atau kombinasi nama belakang dan tanggal lahir."""
@@ -63,10 +64,10 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
             return None, {"status": "error", "error_message": f"Pasien dengan MRN '{mrn}' dan tanggal lahir '{tanggal_lahir}' tidak ditemukan."}
         return patient_bundle["entry"][0]["resource"], None
 
-    elif nama_belakang and tanggal_lahir:
-        print("DEBUG: Melakukan verifikasi menggunakan Nama Belakang dan Tanggal Lahir.")
-        encoded_family_name = quote(nama_belakang)
-        query_path = f"Patient?family={encoded_family_name}&birthdate={tanggal_lahir}"
+    elif nama_depan and tanggal_lahir:
+        print("DEBUG: Melakukan verifikasi menggunakan Nama Depan dan Tanggal Lahir.")
+        encoded_given_name = quote(nama_depan)
+        query_path = f"Patient?given={encoded_given_name}&birthdate={tanggal_lahir}"
         print(f"DEBUG: URL Permintaan: {BASE_FHIR_URL}/{query_path}")
         patient_bundle = make_fhir_request('GET', query_path)
         print(f"DEBUG: Respons dari server: {patient_bundle}")
@@ -82,6 +83,112 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
     else:
         print("DEBUG: Gagal verifikasi karena informasi tidak lengkap.")
         return None, {"status": "error", "error_message": "Informasi tidak lengkap. Mohon berikan data verifikasi yang diperlukan."}
+    
+def cek_pasien_terdaftar(nama_depan: str, nama_belakang: str, tanggal_lahir: str) -> dict:
+    """Memeriksa apakah pasien dengan nama dan tanggal lahir yang diberikan sudah terdaftar di sistem."""
+    
+    print("\n--- DEBUG: Memulai cek_pasien_terdaftar ---")
+    print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}'")
+
+    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir)
+    
+    if error:
+        print(f"DEBUG: Verifikasi gagal, pasien dianggap belum terdaftar. Error: {error}")
+        return {"status": "success", "is_registered": False, "report": "Pasien dengan data tersebut belum terdaftar. Anda bisa melanjutkan proses pendaftaran."}
+
+    if patient_resource:
+        print("DEBUG: Pasien ditemukan.")
+        existing_mrn = "tidak ditemukan"
+        if "identifier" in patient_resource:
+            for identifier in patient_resource["identifier"]:
+                if identifier.get("type", {}).get("text") == "MRN":
+                    existing_mrn = identifier.get("value", "tidak ditemukan")
+                    break
+        report = f"Pasien dengan nama dan tanggal lahir tersebut sudah terdaftar dengan Nomor Rekam Medis (MRN): {existing_mrn}"
+        print(f"DEBUG: Laporan akhir: {report}")
+        return {"status": "success", "is_registered": True, "report": report}
+    
+    return {"status": "success", "is_registered": False, "report": "Pasien dengan data tersebut belum terdaftar. Anda bisa melanjutkan proses pendaftaran."}
+
+# Function to get the next MRN
+def get_next_mrn():
+    """Mencari MRN terakhir dan menaikkannya satu."""
+    # Mencari pasien terakhir berdasarkan ID (asumsi ID terakhir adalah yang terbaru)
+    # Catatan: Di produksi, gunakan sistem sekuens yang lebih andal.
+    patient_bundle = make_fhir_request('GET', 'Patient?_sort=-_lastUpdated&_count=1')
+    if not patient_bundle or patient_bundle.get("total", 0) == 0:
+        return "MRN000001" # MRN pertama jika database kosong
+
+    last_patient = patient_bundle["entry"][0]["resource"]
+    if "identifier" in last_patient:
+        for identifier in last_patient["identifier"]:
+            if identifier.get("type", {}).get("text") == "MRN":
+                last_mrn = identifier.get("value", "MRN000000")
+                try:
+                    numeric_part = int(last_mrn.replace("MRN", ""))
+                    new_numeric_part = numeric_part + 1
+                    return f"MRN{new_numeric_part:06d}"
+                except ValueError:
+                    continue # Lanjutkan jika format MRN tidak terduga
+    return "MRN000001" # Fallback
+
+def registrasi_pasien_baru(
+    nama_depan: str,
+    jenis_identitas: str,
+    nomor_identitas: str,
+    agama: str,
+    status_perkawinan: str,
+    tempat_lahir: str,
+    pendidikan: str,
+    tanggal_lahir: str,
+    jenis_kelamin: str,
+    pekerjaan: str,
+    golongan_darah: str,
+    nama_tengah: Optional[str] = None,
+    nama_belakang: Optional[str] = None,
+) -> dict:
+    """Mendaftarkan pasien baru ke dalam sistem FHIR."""
+    
+    print("\n--- DEBUG: Memulai registrasi_pasien_baru ---")
+    print(f"Input Diterima: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}'")
+    
+    new_mrn = get_next_mrn()
+    print(f"DEBUG: MRN baru yang dibuat: {new_mrn}")
+    
+    gender_map = {"Laki-Laki": "male", "Perempuan": "female"}
+    gender_code = gender_map.get(jenis_kelamin, "unknown")
+
+    name_list = [{"given": [nama_depan], "family": nama_belakang, "use": "official"}]
+    if nama_tengah:
+        name_list[0]["given"].append(nama_tengah)
+
+    patient_body = {
+        "resourceType": "Patient",
+        "identifier": [
+            {"use": "usual", "type": {"text": "MRN"}, "value": new_mrn},
+            {"use": "official", "type": {"text": jenis_identitas}, "value": nomor_identitas}
+        ],
+        "name": name_list,
+        "gender": gender_code,
+        "birthDate": tanggal_lahir,
+        "extension": [
+            {"url": "http://example.info/extension/agama", "valueString": agama},
+            {"url": "http://example.info/extension/pendidikan", "valueString": pendidikan},
+            {"url": "http://example.info/extension/pekerjaan", "valueString": pekerjaan},
+            {"url": "http://example.info/extension/golongan_darah", "valueString": golongan_darah},
+        ],
+        "maritalStatus": {"text": status_perkawinan},
+    }
+    
+    print(f"DEBUG: Body JSON yang akan dikirim ke FHIR API:\n{patient_body}")
+
+    response = make_fhir_request('POST', 'Patient', payload=patient_body)
+    print(f"DEBUG: Respons dari server FHIR: {response}")
+    
+    if response and response.get("id"):
+        return {"status": "success", "report": f"Pendaftaran berhasil! Pasien '{nama_depan} {nama_belakang}' telah terdaftar dengan Nomor Rekam Medis (MRN): {new_mrn}"}
+    else:
+        return {"status": "error", "error_message": "Gagal mendaftarkan pasien baru ke dalam sistem."}
 
 # Function to check upcoming appointments and send reminders    
 def periksa_janji_temu_dan_kirim_kuesioner(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
