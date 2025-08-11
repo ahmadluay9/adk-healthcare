@@ -10,14 +10,16 @@ patient_info_display_agent  = LlmAgent(
         # "Gunakan bahasa: {user_language} setiap memberikan respon.\n"
         "Anda adalah agen untuk menampilkan informasi nama dan tanggal lahir pasien. "
         "Tugas Anda adalah sebagai berikut:\n"
-        "1. Apabila bahasa yang digunakan 'Bahasa Indonesia', berikan respon seperti di bawah ini:\n"
-        "       - Nama Depan: Charles\n"
-        "       - Nama Belakang: Watts\n"
-        "       - Tanggal Lahir: 9 September 1999\n"
-        "2. If the language used is 'English', provide a response as shown below:\n"
-        "       - First Name: Charles\n"
-        "       - Last Name: Watts\n"
-        "       - Date of Birth: September 9, 1999\n"
+        "1. Apabila bahasa yang digunakan 'Bahasa Indonesia', berikan respon seperti contoh di bawah ini:\n"
+        "       Melakukan verifikasi identitas. \n\n"
+        "       * Nama Depan:  \n"
+        "       * Nama Belakang:  \n"
+        "       * Tanggal Lahir: hari bulan tahun\n"
+        "2. If the language used is 'English', provide a response like the example below:\n"
+        "       Verifying identity. \n\n"
+        "       * First Name: \n"
+        "       * Last Name: \n"
+        "       * Date of Birth: month date, year\n"
         "3. Jika nama belakang tidak ada atau kosong, jangan tampilkan baris nama belakang sama sekali."
     ),
     output_key="patient_name_dob",
@@ -28,7 +30,7 @@ patient_info_display_agent  = LlmAgent(
 
 patient_verification_agent = LlmAgent(
     name="VerificationAgent",
-    model=model_name,
+    model="gemini-2.5-pro",
     description="Agen yang bertugas untuk memverifikasi identitas pengguna.",
     instruction=(
         "Tugas Anda adalah memverifkasi data pasien sudah terdaftar apa belum sesuai alur berikut: \n"
@@ -37,20 +39,19 @@ patient_verification_agent = LlmAgent(
         "   - Jika tidak ada nama belakang, isi nama belakang dan nama tengah dengan null.\n"
         "   - Saat meminta tanggal lahir, tidak perlu format khusus dari pasien.\n"
         "2. Ubah input tanggal lahir dari pasien menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n"
-        "3. Panggil alat `cek_pasien_terdaftar` dengan data tersebut.\n"
-        "4. Berdasarkan hasil dari `cek_pasien_terdaftar`:\n"
+        "3. Gunakan data tersebut untuk pengecekan data pasien menggunakan alat `cek_pasien_terdaftar`.\n"
+        "4. Berdasarkan hasil dari pengecekan tersebut:\n"
         "   a. Sampaikan respon dibawah ini jika pasien sudah terdaftar: \n"
-        "      - Bahasa Indonesia: 'Terima kasih. **Anda sudah terdaftar**.'\n"
-        "      - English: 'Thank you. **You are already registered**.'\n"
+        "      - Bahasa Indonesia: 'Terima kasih. **Anda sudah terdaftar**. Apakah Anda ingin mengetahui layanan kami?'\n"
+        "      - English: 'Thank you. **You are already registered**. Would you like to know about our services?'\n"
         "   b. Sampaikan respon dibawah ini jika pasien belum terdaftar: \n"
         "      - Bahasa Indonesia: 'Terima kasih. **Anda belum terdaftar**. Apakah Anda ingin melanjutkan ke proses registrasi pasien baru?'\n"
         "      - English: 'Thank you. **You are not yet registered**. Would you like to proceed to new patient registration?'\n"
-        "5. Jika pasien sudah terdaftar, lanjutkan ke agen `existing_patient_service_workflow`"
-        "6. Jika pasien belum terdaftar, lanjutkan ke agen `new_patient_registration`."
+        "5. Jika pasien setuju, lanjutkan ke agen yang sesuai (`existing_patient_service_workflow` atau `new_patient_registration_agent`)."
     ),
     tools=[cek_pasien_terdaftar],
     generate_content_config=types.GenerateContentConfig(
-        temperature=0.2
+        temperature=0.1
     )
 )
 
