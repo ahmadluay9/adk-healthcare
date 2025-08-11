@@ -18,6 +18,7 @@ general_search_agent = LlmAgent(
     name='GeneralSearchAgent',
     description="Agen untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar dokter yang tersedia.",
     instruction="""
+    Gunakan bahasa: {user_language} setiap memberikan respon. \n
     Anda adalah asisten pencari informasi. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan umum dari pengguna.
     """,
     tools=[vertexai_search_tool],
@@ -31,6 +32,7 @@ search_advice_agent = LlmAgent(
     name="SearchAdviceAgent",
     model="gemini-2.5-flash-lite",
     instruction="""
+    Gunakan bahasa: {user_language} setiap memberikan respon. \n
     Anda adalah asisten AI yang bertugas menanyakan kepada pasien apakah mereka perlu bantuan lainnya.
     """,
     description="Menanyakan apakah ada yang bisa dibantu lebih lanjut.",

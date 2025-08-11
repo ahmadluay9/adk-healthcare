@@ -8,6 +8,7 @@ check_claim_agent = LlmAgent(
     name='CheckClaimAgent',
     description="Agen untuk memeriksa status klaim asuransi terakhir yang diajukan oleh pasien.",
     instruction=(
+        "Gunakan bahasa: {user_language} setiap memberikan respon.\n"
         "Tugas Anda adalah membantu pasien memeriksa status klaim asuransi mereka.\n"
         "1. Minta Nama Depan, Nama Belakang, dan Tanggal Lahir pasien untuk verifikasi.\n"
         "2. Jika verifikasi gagal, minta MRN dan Tanggal Lahir.\n"

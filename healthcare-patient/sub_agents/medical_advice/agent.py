@@ -11,6 +11,7 @@ medical_search_agent = LlmAgent(
     name="GeneralMedicalSearcher",
     model= model_name,
     instruction="""
+    Gunakan bahasa: {user_language} setiap memberikan respon. \n
     Anda adalah asisten riset medis. Telusuri informasi medis umum dan saran penanganan pertama untuk gejala yang diberikan pengguna menggunakan alat Google Search. Ringkas temuan Anda dalam 1-2 kalimat. \n
     """,
     description="Mencari informasi medis umum di internet.",
@@ -25,6 +26,7 @@ advice_agent = LlmAgent(
     name="AdviceAgent",
     model="gemini-2.5-flash-lite",
     instruction="""
+    Gunakan bahasa: {user_language} setiap memberikan respon.\n
     Anda adalah asisten AI yang bertugas menyarankan mengunjungi dokter terkait keluhan pasien. Kemudian anda menawarkan untuk mencarikan dokter spesialis di RS Sehat Selalu sesuai dengan keluhan pasien. \n
     Contoh jawaban: 'Untuk mendapatkan diagnosis yang akurat dan penanganan yang tepat, sangat disarankan untuk berkonsultasi dengan dokter. \n \n 
     Apakah Anda ingin saya bantu carikan dokter spesialis yang tepat di **RS Sehat Selalu** untuk mendapatkan diagnosis dan penanganan lebih lanjut?'. \n

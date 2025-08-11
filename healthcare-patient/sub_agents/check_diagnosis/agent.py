@@ -8,6 +8,7 @@ check_diagnosis_agent = LlmAgent(
     model=model_name,
     description="Agen untuk memeriksa diagnosis terakhir pasien dari riwayat kunjungan mereka.",
     instruction=(
+        "Gunakan bahasa: {user_language} setiap memberikan respon.\n"
         "Tugas Anda adalah membantu pasien memeriksa diagnosis terakhir mereka.\n"
         "1. Verifikasi identitas pasien.\n"
         "2. Panggil alat `cek_diagnosis_terakhir` dengan data yang sesuai."
@@ -26,6 +27,7 @@ check_insurance_program_agent = LlmAgent(
     model=model_name,
     description="Agen untuk memeriksa manfaat asuransi pasien dan, jika relevan, menawarkan untuk memeriksa cakupan diagnosis.",
     instruction=(
+        "Gunakan bahasa: {user_language} setiap memberikan respon.\n"
         "Tugas Anda adalah membantu pasien memeriksa program asuransi mereka.\n"
         "1. Verifikasi identitas pasien.\n"
         "2. Panggil alat `cek_program_asuransi` dengan data yang sesuai."

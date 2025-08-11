@@ -41,3 +41,5 @@ python3 -m http.server 8080
 - `http://localhost:8080/static/chatbot.html`
 
 - Anda akan melihat halaman web rumah sakit. Chat popup di pojok kanan bawah akan berkomunikasi dengan server ADK yang berjalan di port 8000.
+
+Gunakan selalu bahasa yang dipilih pengguna. Bahasa yang digunakan: {language}.

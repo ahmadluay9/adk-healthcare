@@ -3,7 +3,19 @@ from google.adk.agents import Agent
 from dotenv import load_dotenv
 
 # Sub-Agen yang diimpor
-from .sub_agents.patient_verification.agent import patient_verification_agent
+from .sub_agents.greeting.agent import greeting_workflow
+from .sub_agents.language_selection.agent import language_selection_workflow
+# from .sub_agents.patient_status.agent import patient_status_agent
+# from .sub_agents.patient_status_confirmation.agent import patient_status_workflow
+from .sub_agents.ask_patient_status.agent import ask_patient_status_agent
+from .sub_agents.patient_status_confirmation.agent import patient_status_confirmation_agent
+from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
+from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
+from .sub_agents.patient_verification.agent import patient_verification_workflow
+from .sub_agents.existing_patient_service.agent import existing_patient_service_workflow
+# from .sub_agents.ask_fullname_dob.agent import ask_fullname_dob_agent
+# from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
+# from .sub_agents.registration_confirmation.agent import registration_confirmation_agent
 from .sub_agents.general_question_search.agent import search_agent
 from .sub_agents.doctor_search.agent import hospital_doctor_search_agent
 from .sub_agents.medical_advice.agent import medical_advice_agent
@@ -13,9 +25,9 @@ from .sub_agents.check_insurance_benefits.agent import check_benefits_agent
 from .sub_agents.check_claim_status.agent import check_claim_agent
 from .sub_agents.check_diagnosis.agent import diagnosis_agent
 from .sub_agents.bpjs_check.agent import bpjs_check_agent
-from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
 
 from .tools import model_name
+
 # --- Konfigurasi Lingkungan ---
 load_dotenv()
 os.environ['GOOGLE_CLOUD_PROJECT'] = os.getenv('GOOGLE_CLOUD_PROJECT')
@@ -30,14 +42,19 @@ root_agent = Agent(
     instruction = (
     "Anda adalah Asisten Klinis Virtual. Tugas utama Anda adalah memahami permintaan pengguna dan mendelegasikannya kepada sub-agen yang paling sesuai.\n"
     "\n"
-    "1. **Identifikasi Status Pasien**: Tanyakan terlebih dahulu apakah pengguna merupakan **Pasien Baru** atau **Pasien Lama**.\n"
-    "   - Jika pasien baru, delegasikan ke `new_patient_registration_agent`.\n"
-    "       - Jika pendaftaran berhasil, lanjutkan ke proses verifikasi identitas pasien menggunakan `patient_verification_agent`.\n"
-    "   - Jika pasien lama, lanjutkan ke proses verifikasi identitas.\n"
+    "0. **Sambutan Awal**: Gunakan `greeting_workflow` untuk menyapa pengguna di awal percakapan dan menanyakan pilihan bahasa pengguna.\n"
+    "   - Gunakan `language_selection_workflow` untuk mengonfirmasi pilihan bahasa pengguna serta menanyakan nama lengkap dan tanggal lahir.\n"
+    "     - Jika pengguna setuju memberikan informasi, lanjutkan ke langkah 1.\n"
+    "     - Jika tidak, tanyakan kebutuhan pengguna secara langsung.\n"
     "\n"
-    "2. **Verifikasi Identitas Pasien**: Untuk pasien lama, lakukan verifikasi identitas sebelum memberikan akses ke layanan lain. "
-    "Tanyakan **Nama Lengkap** dan **Tanggal Lahir**, lalu delegasikan ke `patient_verification_agent`.\n"
-    "   - Jika verifikasi gagal karena data tidak ditemukan atau terdapat duplikasi, minta Nomor Rekam Medis (MRN) dan Tanggal Lahir.\n"
+    "1. **Tentukan Status Pasien**: Tanyakan apakah pengguna merupakan pasien baru atau pasien lama menggunakan agen `ask_patient_status_agent`.\n"
+    "   - Konfirmasi pilihan status pasien dengan agen `patient_status_confirmation_agent`.\n"
+    "\n"
+    "2. **Verifikasi Identitas Pasien**:\n"
+    "   a. Untuk pasien baru, gunakan agen `new_patient_verification_workflow` untuk memverifikasi identitas.\n"
+    "       - Jika verifikasi berhasil, lanjutkan ke agen `new_patient_registration_agent` untuk mendaftarkan pasien baru.\n"
+    "   b. Untuk pasien lama, gunakan agen `patient_verification_workflow` untuk memverifikasi identitas.\n"
+    "       - Jika verifikasi berhasil, lanjutkan ke agen `existing_patient_service_workflow` untuk memberikan layanan pasien.\n"
     "\n"
     "3. **Pahami Niat Pengguna**: Tentukan apakah pengguna ingin:\n"
     "   - Mendapatkan informasi umum,\n"
@@ -64,8 +81,19 @@ root_agent = Agent(
     "7. **Tawarkan Bantuan Lanjutan**: Akhiri setiap respons dengan bertanya, 'Ada lagi yang bisa saya bantu?'\n"
 ),
     sub_agents=[
+        greeting_workflow,
+        language_selection_workflow,
+        # patient_status_agent,
+        ask_patient_status_agent,
+        patient_status_confirmation_agent,
+        # patient_status_workflow,
+        # ask_fullname_dob_agent,
+        patient_verification_workflow,
+        existing_patient_service_workflow,
+        new_patient_verification_workflow,
+        # new_patient_verification_workflow,
         new_patient_registration_agent,
-        patient_verification_agent,
+        # registration_confirmation_agent,
         search_agent,
         hospital_doctor_search_agent,
         medical_advice_agent,

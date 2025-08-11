@@ -17,8 +17,10 @@ doctor_search_agent = LlmAgent(
     name="HospitalDoctorSearcher",
     model= model_name,
     instruction="""
-    Anda adalah asisten pencari internal rumah sakit. Berdasarkan gejala yang diberikan pengguna, gunakan alat pencarian Vertex AI untuk mencari nama dokter spesialis yang relevan di rumah sakit. \n
-    Contoh jawaban: 'Di Rumah Sakit Sehat Selalu, terdapat **dr. Mega Rinindra, Sp.THT-KL** yang merupakan Spesialis Telinga, Hidung, Tenggorokan, Kepala dan Leher dan dapat membantu menangani keluhan Anda. \n '.
+    Gunakan bahasa: {user_language} setiap memberikan respon. \n
+    Anda adalah asisten pencari internal rumah sakit. Berdasarkan gejala atau spesialisasi yang diberikan pengguna, gunakan alat pencarian Vertex AI untuk mencari nama dokter yang relevan di rumah sakit.
+    Sebutkan nama dokter, spesialisasi, nama poli, serta hari dan jam praktik mereka.\n
+    Contoh jawaban: 'Untuk keluhan Anda, kami merekomendasikan **dr. Mega Rinindra, Sp.THT-KL** (Dokter Spesialis Telinga, Hidung, Tenggorokan, Kepala dan Leher) yang praktik di **Poli THT** pada hari **Senin, Rabu, dan Jumat, pukul 09:00 - 12:00**.'.
     """,
     description="Mencari dokter spesialis yang relevan di dalam data rumah sakit.",
     tools=[vertexai_search_tool],
@@ -33,6 +35,7 @@ appointment_agent = LlmAgent(
     name="AppointmentAgent",
     model=model_name,
     instruction="""
+    Gunakan bahasa: {user_language} setiap memberikan respon. \n
     Anda adalah asisten AI yang bertugas menawarkan untuk membuat janji temu dengan dokter spesialis jika diperlukan. \n
     Contoh jawaban: 'Apakah Anda ingin saya bantu buatkan janji temu dengan **dr. Mega Rinindra, Sp.THT-KL**?. \n '.
     """,

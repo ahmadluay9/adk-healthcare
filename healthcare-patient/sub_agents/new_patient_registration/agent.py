@@ -1,35 +1,37 @@
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, SequentialAgent
 from google.genai import types
-from ...tools import registrasi_pasien_baru, cek_pasien_terdaftar, model_name
+from ...tools import registrasi_pasien_baru, model_name
 
-# --- Definisi Sub-Agen Pendaftaran Pasien Baru ---
 new_patient_registration_agent = LlmAgent(
-    name="NewPatientRegistrationAgent",
+    name="RegistrationAgent",
     model=model_name,
     description="Agen untuk memandu pengguna melalui proses pendaftaran pasien baru.",
-    instruction=(
-        "Tugas Anda adalah mendaftarkan pasien baru. Alur kerja Anda adalah sebagai berikut:\n"
-        "1. Selalu mulai dengan menanyakan **Nama Depan**, **Nama Belakang** (Bila Ada), dan **Tanggal Lahir** pasien untuk memeriksa apakah mereka sudah terdaftar.\n"
-        "2. Apabila pasien tidak memiliki nama belakang, isi nama belakang dan nama tengah dengan null \n"
-        "3. Pada saat meminta Tanggal Lahir tidak perlu format khusus. \n"
-        "4. PENTING: Sebelum memanggil alat, Anda WAJIB mengubah input tanggal lahir dari pengguna (misalnya '20 Mei 1985', '20/05/1985', dll.) menjadi format YYYY-MM-DD yang ketat (contoh: '1985-05-20').\n"
-        "5. PENTING: Sebelum memanggil alat, Anda WAJIB mengubah input jenis kelamin dari pengguna (misalnya 'Laki-laki', 'Perempuan', dll.) menjadi format yang sesuai (contoh: 'male', 'female').\n"
-        "6. Panggil alat `cek_pasien_terdaftar` dengan data tersebut.\n"
-        "7. Berdasarkan hasil dari `cek_pasien_terdaftar`:\n"
-        "   a. JIKA pasien sudah terdaftar, sampaikan informasi tersebut (termasuk MRN jika ada) dan hentikan proses.\n"
-        "   b. JIKA pasien belum terdaftar, lanjutkan ke langkah berikutnya untuk pendaftaran.\n"
-        "8. Minta semua informasi tambahan yang diperlukan untuk pendaftaran (Jenis Identitas, Nomor Identitas, Agama, dll.).\n"
-        "9. Setelah semua informasi lengkap, panggil alat `registrasi_pasien_baru`.\n"
-        "10. Sampaikan hasil dari proses pendaftaran (berhasil atau gagal) kepada pengguna.\n"
-        "11. Apabila Pasien **Tidak Memiliki Nama Belakang**, hanya sampaikan nama depannya saja.\n"
-        "Contoh Jawaban: Pendaftaran berhasil! Pasien **Alex**, Tanggal Lahir **9 Agustus 1995** telah terdaftar dengan Nomor Rekam Medis (MRN): **000001**."
-        "12. Jika pendaftaran berhasil, lanjutkan ke proses verifikasi identitas pasien menggunakan `patient_verification_agent`."
-    ),
+instruction = (
+    "Tugas Anda adalah mendaftarkan pasien baru sesuai alur berikut:\n"
+    "0. Gunakan bahasa: {user_language} setiap memberikan respon. \n"
+    "1. Gunakan informasi dari {patient_name_dob} untuk memeriksa apakah pasien sudah terdaftar.\n"
+    "   - Jika tidak ada nama belakang, isi nama belakang dan nama tengah dengan null.\n"
+    "2. Ubah input tanggal lahir dari pasien menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n"
+    "3. Minta semua informasi tambahan yang diperlukan:\n"
+    "   - Jenis Identitas (hanya 'KTP', 'KIA', 'Paspor/Passport')\n"
+    "   - Nomor Identitas\n"
+    "   - Agama\n"
+    "   - Jenis Kelamin (ubah ke format 'male' atau 'female')\n"
+    "   - Nomor HP (format: 628xxxxxxxxx)\n"
+    "   - Data tambahan lainnya jika diperlukan.\n"
+    "4. Setelah semua informasi lengkap, panggil alat `registrasi_pasien_baru`.\n"
+    "5. Sampaikan HANYA hasil pendaftaran (berhasil/gagal) ke pasien:\n"
+    "   - Jika berhasil:\n"
+    "       - Bahasa Indonesia: 'Pendaftaran berhasil!\n Apakah Anda ingin melanjutkan ke proses verifikasi identitas pasien?'\n"
+    "       - English: 'Registration successful!\n Would you like to proceed to patient identity verification?'\n"
+    "   - Jika gagal:\n"
+    "       - Bahasa Indonesia: 'Pendaftaran gagal!'\n"
+    "       - English: 'Registration failed!'\n"
+    "6. Jika pasien setuju, lanjutkan ke agen `existing_patient_service_workflow`."
+),
     tools=[
-            registrasi_pasien_baru,
-            cek_pasien_terdaftar
+            registrasi_pasien_baru
            ],
-    output_key="new_patient_registration",
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
     )
