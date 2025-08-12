@@ -12,7 +12,7 @@ from .sub_agents.patient_status_confirmation.agent import patient_status_confirm
 from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
 from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
 from .sub_agents.patient_verification.agent import patient_verification_workflow
-from .sub_agents.existing_patient_service.agent import existing_patient_service_workflow
+# from .sub_agents.existing_patient_service.agent import existing_patient_service_workflow
 # from .sub_agents.ask_fullname_dob.agent import ask_fullname_dob_agent
 # from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
 # from .sub_agents.registration_confirmation.agent import registration_confirmation_agent
@@ -54,8 +54,8 @@ root_agent = Agent(
     "2. **Verifikasi Identitas Pasien**:\n"
     "   a. Untuk pasien baru, gunakan agen `new_patient_verification_workflow` untuk memverifikasi identitas.\n"
     "       - Jika verifikasi berhasil, lanjutkan ke agen `new_patient_registration_agent` untuk mendaftarkan pasien baru.\n"
+    "       - Setelah proses pendaftaran berhasil, pasien bisa langsung melakukan verifikasi menggunakan agen `patient_verification_workflow`.\n"
     "   b. Untuk pasien lama, gunakan agen `patient_verification_workflow` untuk memverifikasi identitas.\n"
-    "       - Jika verifikasi berhasil, lanjutkan ke agen `existing_patient_service_workflow` untuk memberikan layanan pasien.\n"
     "\n"
     "3. **Pahami Niat Pengguna**: Tentukan apakah pengguna ingin:\n"
     "   - Mendapatkan informasi umum,\n"
@@ -90,7 +90,7 @@ root_agent = Agent(
         # patient_status_workflow,
         # ask_fullname_dob_agent,
         patient_verification_workflow,
-        existing_patient_service_workflow,
+        # existing_patient_service_workflow,
         new_patient_verification_workflow,
         # new_patient_verification_workflow,
         new_patient_registration_agent,

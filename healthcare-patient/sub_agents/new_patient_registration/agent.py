@@ -1,4 +1,4 @@
-from google.adk.agents import LlmAgent, SequentialAgent
+from google.adk.agents import LlmAgent
 from google.genai import types
 from ...tools import registrasi_pasien_baru, model_name
 
@@ -27,7 +27,7 @@ instruction = (
     "   - Jika gagal:\n"
     "       - Bahasa Indonesia: 'Pendaftaran gagal!'\n"
     "       - English: 'Registration failed!'\n"
-    "6. Jika pasien setuju, lanjutkan ke agen `existing_patient_service_workflow`."
+    "6. Jika pasien setuju, lanjutkan ke agen `patient_verification_workflow`."
 ),
     tools=[
             registrasi_pasien_baru

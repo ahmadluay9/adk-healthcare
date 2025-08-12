@@ -12,6 +12,7 @@ import re
 # Environment Configuration
 load_dotenv()
 model_name = os.getenv("MODEL")
+model_lite = os.getenv("MODEL_LITE")
 PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT')
 FHIR_LOCATION = os.getenv('FHIR_LOCATION')
 FHIR_DATASET_ID = os.getenv('FHIR_DATASET_ID')
@@ -44,16 +45,66 @@ def pilih_bahasa(bahasa: str) -> dict:
 
 def dapatkan_tanggal_hari_ini() -> dict:
     """Mengembalikan tanggal hari ini dalam format Bahasa Indonesia."""
-    try:
-        # Atur locale ke Bahasa Indonesia
-        locale.setlocale(locale.LC_TIME, 'id_ID.UTF-8')
-    except locale.Error:
-        # Fallback jika locale tidak tersedia
-        locale.setlocale(locale.LC_TIME, '')
-        
-    sekarang = datetime.datetime.now()
-    tanggal_format = sekarang.strftime("%A, %d %B %Y")
+    nama_hari = {
+        0: "Senin",
+        1: "Selasa",
+        2: "Rabu",
+        3: "Kamis",
+        4: "Jumat",
+        5: "Sabtu",
+        6: "Minggu"
+    }
+    
+    nama_bulan = {
+        1: "Januari",
+        2: "Februari",
+        3: "Maret",
+        4: "April",
+        5: "Mei",
+        6: "Juni",
+        7: "Juli",
+        8: "Agustus",
+        9: "September",
+        10: "Oktober",
+        11: "November",
+        12: "Desember"
+    }
+
+    # Tentukan zona waktu Waktu Indonesia Barat (WIB), yaitu UTC+7
+    zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
+
+    # Dapatkan tanggal dan waktu saat ini secara spesifik untuk zona waktu WIB
+    sekarang = datetime.datetime.now(zona_waktu_wib)
+    
+    # Dapatkan nama hari dan bulan dari pemetaan
+    # .weekday() mengembalikan angka (Senin=0, Selasa=1, ...)
+    hari_ini = nama_hari[sekarang.weekday()]
+    bulan_ini = nama_bulan[sekarang.month]
+    
+    # Susun string tanggal yang lengkap
+    tanggal_format = f"{hari_ini}, {sekarang.day} {bulan_ini} {sekarang.year}"
+    
     laporan = f"Hari ini adalah hari {tanggal_format}."
+    
+    return {"status": "success", "report": laporan}
+
+def dapatkan_waktu_sekarang() -> dict:
+    """
+    Mengembalikan waktu saat ini dalam format Bahasa Indonesia
+    dengan zona waktu yang benar (WIB/UTC+7).
+    """
+    # Tentukan zona waktu Waktu Indonesia Barat (WIB), yaitu UTC+7
+    zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
+
+    # Dapatkan tanggal dan waktu saat ini secara spesifik untuk zona waktu WIB
+    sekarang = datetime.datetime.now(zona_waktu_wib)
+    
+    # Format waktu ke dalam string "Jam:Menit:Detik"
+    # %H untuk format 24 jam, %I untuk format 12 jam dengan %p (AM/PM)
+    waktu_format = sekarang.strftime("%H:%M:%S")
+    
+    laporan = f"Sekarang pukul {waktu_format} WIB."
+    
     return {"status": "success", "report": laporan}
 
 # Function to make FHIR API requests
@@ -115,7 +166,34 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
     else:
         print("DEBUG: Gagal verifikasi karena informasi tidak lengkap.")
         return None, {"status": "error", "error_message": "Informasi tidak lengkap. Mohon berikan data verifikasi yang diperlukan."}
+
+def dapatkan_mrn_pasien(nama_depan: str, nama_belakang: str, tanggal_lahir: str) -> dict:
+    """Mendapatkan Nomor Rekam Medis (MRN) pasien berdasarkan nama dan tanggal lahir."""
     
+    print("\n--- DEBUG: Memulai dapatkan_mrn_pasien ---")
+    print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}'")
+
+    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir)
+    
+    if error:
+        print(f"DEBUG: Verifikasi gagal: {error}")
+        return error
+
+    if patient_resource:
+        print("DEBUG: Pasien ditemukan.")
+        mrn_value = "tidak ditemukan"
+        if "identifier" in patient_resource:
+            for identifier in patient_resource["identifier"]:
+                if identifier.get("type", {}).get("text") == "MRN":
+                    mrn_value = identifier.get("value", "tidak ditemukan")
+                    break
+        
+        report = f"Nomor Rekam Medis (MRN) untuk pasien {nama_depan} {nama_belakang} adalah: {mrn_value}"
+        print(f"DEBUG: Laporan akhir: {report}")
+        return {"status": "success", "mrn": mrn_value, "report": report}
+    
+    return {"status": "error", "error_message": "Gagal memproses permintaan."}
+   
 def cek_pasien_terdaftar(nama_depan: str, nama_belakang: str, tanggal_lahir: str) -> dict:
     """Memeriksa apakah pasien dengan nama dan tanggal lahir yang diberikan sudah terdaftar di sistem."""
     

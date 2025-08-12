@@ -1,10 +1,10 @@
 from google.adk.agents import LlmAgent
 from google.genai import types
-from ...tools import model_name
+from ...tools import model_name, model_lite
 
 ask_patient_status_agent = LlmAgent(
     name="AskPatientStatusAgent",
-    model="gemini-2.5-flash-lite",
+    model=model_lite,
     instruction="""  
     Anda adalah agen yang bertugas menanyakan apakah pengguna ingin melanjutkan untuk memeriksa status.
     1. Gunakan bahasa: {user_language} setiap memberikan respon.

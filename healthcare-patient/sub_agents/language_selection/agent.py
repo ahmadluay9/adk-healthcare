@@ -1,15 +1,10 @@
-from google.adk.agents import LlmAgent, SequentialAgent, BaseAgent
-from google.adk.events import Event, EventActions
-from google.adk.agents.invocation_context import InvocationContext
+from google.adk.agents import LlmAgent, SequentialAgent
 from google.genai import types
-from typing import AsyncGenerator
-from ...tools import model_name, pilih_bahasa
-
-# language_selection_tool = FunctionTool(func=pilih_bahasa)
+from ...tools import model_name, model_lite
 
 language_selection_agent = LlmAgent(
     name="LanguageSelectionAgent",
-    model=model_name,
+    model=model_lite,
     instruction="""   
     Anda adalah agen yang bertugas menkonfirmasi pilihan bahasa yang akan digunakan pengguna.
         - Jika pengguna memilih "Bahasa Indonesia", respons Anda adalah: "Bahasa Indonesia akan digunakan dalam percakapan ini.\n"
@@ -25,12 +20,12 @@ language_selection_agent = LlmAgent(
 
 ask_fullname_dob_agent = LlmAgent(
     name="AskFullNameAndDOB",
-    model=model_name,
+    model=model_lite,
     description="Agen yang meminta pengguna untuk memasukkan nama lengkap dan tanggal lahir, lalu memanggil agen verifikasi pasien.",
     instruction=(
         # "Gunakan bahasa: {user_language} setiap memberikan respon.\n"
         "Tugas Anda adalah:\n"
-        "1. Meminta pengguna untuk memberikan nama lengkap dan tanggal lahir mereka.\n"
+        "1. Meminta pengguna untuk memberikan nama lengkap dan tanggal lahir mereka (tidak perlu format khusus).\n"
         "   - Bahasa Indonesia: 'Mohon masukkan nama lengkap dan tanggal lahir Anda.'\n"
         "   - English: 'Please provide your full name and date of birth.'\n"
         "2. Ubah input tanggal lahir dari pasien menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n"
@@ -41,23 +36,6 @@ ask_fullname_dob_agent = LlmAgent(
         temperature=0.2
     )
 )
-
-# ask_patient_status_agent = LlmAgent(
-#     name="AskPatientStatusAgent",
-#     model="gemini-2.5-flash-lite",
-#     instruction="""  
-#     Anda adalah agen yang bertugas menanyakan apakah pengguna ingin melanjutkan untuk memeriksa status.
-#     1. Gunakan bahasa: {user_language} setiap memberikan respon.
-#     2. Tanyakan kepada pengguna apakah ingin melanjutkan ke langkah selanjutnya:
-#         - Bahasa Indonesia: "Apakah Anda **Pasien Baru** atau **Pasien Lama**?"
-#         - English: "Are you a **New Patient** or an **Existing Patient**?"
-#     3. Jika pengguna setuju, lanjutkan ke agen `patient_status_workflow`.
-#     """,
-#     description="Agen yang menanyakan kepada pengguna apakah mereka pasien baru atau pasien lama, kemudian mengarahkan ke alur kerja pemeriksaan status pasien.",
-#     generate_content_config=types.GenerateContentConfig(
-#         temperature=0.1
-#     )
-# )
 
 language_selection_workflow = SequentialAgent(
     name="LanguageSelectionWorkflow",
