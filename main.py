@@ -29,19 +29,19 @@ app = get_fast_api_app(
     web=False, 
 )
 
-# --- Rute untuk mengarahkan ke chatbot.html ---
+# --- Rute untuk mengarahkan ke index.html ---
 @app.get("/", include_in_schema=False)
 async def read_root():
     """
-    Mengarahkan pengguna dari rute root ke halaman chatbot.
+    Mengarahkan pengguna dari rute root ke halaman index.
     """
-    return RedirectResponse(url="/chatbot.html")
+    return RedirectResponse(url="/index.html")
 
 # --- Sajikan File Statis dari folder 'templates' ---
 # Pastikan direktori 'templates' ada
 os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
-# Mount direktori 'templates' untuk menyajikan file seperti chatbot.html
+# Mount direktori 'templates' untuk menyajikan file seperti index.html
 # Ini memungkinkan FastAPI untuk menemukan dan mengirimkan file saat browser memintanya.
 app.mount("/", StaticFiles(directory=TEMPLATES_DIR, html=True), name="templates")
 

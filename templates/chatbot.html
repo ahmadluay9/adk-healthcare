@@ -68,8 +68,11 @@
 
                 <!-- User Input -->
                 <div class="p-4 bg-gray-50 border-t border-gray-200">
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
                         <input type="text" id="user-input" class="w-full bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik pesan Anda..." disabled>
+                        <button id="mic-btn" class="text-gray-500 p-3 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                        </button>
                         <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>
@@ -113,6 +116,7 @@
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
         const statusIndicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
         const patientCardUnverified = document.getElementById('patient-card-unverified');
@@ -122,6 +126,21 @@
         const patientDobEl = document.getElementById('patient-dob');
         const patientAvatarEl = document.getElementById('patient-avatar');
         
+        // --- Speech Recognition Setup ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'id-ID';
+            recognition.interimResults = false;
+        } else {
+            console.warn('Speech Recognition not supported in this browser.');
+            if(micBtn) micBtn.style.display = 'none';
+        }
+
         // --- Helper Functions ---
         const scrollToBottom = () => {
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -219,6 +238,9 @@
         const setUIState = (enabled, message = '') => {
             userInput.disabled = !enabled;
             sendBtn.disabled = !enabled;
+            if (micBtn && SpeechRecognition) {
+                micBtn.disabled = !enabled;
+            }
             if (message) userInput.placeholder = message;
         };
 
@@ -253,6 +275,10 @@
         };
 
         const sendMessageToBackend = async (messageText) => {
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+            }
             showTypingIndicator();
             setUIState(false, 'Waiting for response...');
 
@@ -281,9 +307,9 @@
                         const jsonStr = line.substring(5);
                         const data = JSON.parse(jsonStr);
                         processSseEvent(data);
-                    } catch (e) {
+                     } catch (e) {
                         console.error('Error parsing event line:', e, line);
-                    }
+                     }
                 }
 
             } catch (error) {
@@ -296,12 +322,25 @@
         };
 
         const handleUserInput = () => {
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+            }
             const input = userInput.value.trim();
             if (!input) return;
             
             addMessage(input, 'user');
             sendMessageToBackend(input);
             userInput.value = '';
+        };
+
+        const toggleListening = () => {
+            if (!SpeechRecognition) return;
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
         };
 
         const initializeSession = async () => {
@@ -335,6 +374,38 @@
                 handleUserInput();
             }
         });
+
+        if (micBtn) {
+            micBtn.addEventListener('click', toggleListening);
+        }
+
+        if (recognition) {
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('bg-red-500', 'text-white');
+                micBtn.classList.remove('text-gray-500', 'hover:bg-gray-200');
+                userInput.placeholder = 'Listening...';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                userInput.placeholder = 'Sorry, I did not catch that.';
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micBtn.classList.remove('bg-red-500', 'text-white');
+                micBtn.classList.add('text-gray-500', 'hover:bg-gray-200');
+                if (!userInput.disabled) {
+                    userInput.placeholder = 'Ketik pesan Anda...';
+                }
+            };
+        }
 
         // --- Initial Load ---
         window.addEventListener('load', initializeSession);
