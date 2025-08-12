@@ -122,13 +122,22 @@
             const avatarInitial = isUser ? 'U' : 'AI';
             const avatarColor = isUser ? '3b82f6' : '1d4ed8';
 
+            // Create a timestamp
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const timestamp = `${hours}:${minutes}`;
+
             bubble.className = `flex items-end gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
             const avatar = `<img src="https://placehold.co/40x40/${avatarColor}/ffffff?text=${avatarInitial}" alt="${authorDisplay}" class="w-10 h-10 rounded-full ${isUser ? 'order-2' : 'order-1'}">`;
             
             bubble.innerHTML = `
                 ${!isUser ? avatar : ''}
                 <div class="max-w-md">
-                    <div class="text-xs font-semibold mb-1 ${isUser ? 'text-right' : 'text-left'} text-gray-500">${authorDisplay}</div>
+                    <div class="flex items-baseline gap-2 text-xs font-semibold mb-1 ${isUser ? 'justify-end' : 'justify-start'} text-gray-500">
+                        <span>${authorDisplay}</span>
+                        <span class="font-normal text-gray-400">${timestamp}</span>
+                    </div>
                     <div class="p-3 rounded-2xl ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'} ${isUser ? 'order-1' : 'order-2'}">
                         <p class="text-sm">${text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</p>
                     </div>
@@ -206,7 +215,6 @@
                 removeTypingIndicator();
                 addMessage(part.text, author);
             } 
-            // NOTE: The patient verification logic has been removed.
         };
 
         const sendMessageToBackend = async (messageText) => {
