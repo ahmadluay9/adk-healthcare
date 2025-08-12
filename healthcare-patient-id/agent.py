@@ -25,7 +25,7 @@ from .sub_agents.check_upcoming_appointments.agent import check_appointment_agen
 from .sub_agents.create_appointment.agent import create_appointment_agent
 from .sub_agents.check_insurance_benefits.agent import check_benefits_agent
 from .sub_agents.check_claim_status.agent import check_claim_agent
-from .sub_agents.check_diagnosis.agent import diagnosis_agent
+from .sub_agents.check_diagnosis.agent import check_diagnosis_agent
 from .sub_agents.bpjs_check.agent import bpjs_check_agent
 
 from .tools import model_name
@@ -59,7 +59,7 @@ root_agent = Agent(
     "   - Untuk memeriksa janji temu yang sudah ada, gunakan `check_appointment_agent`.\n"
     "   - Untuk memeriksa manfaat asuransi, gunakan `check_benefits_agent`.\n"
     "   - Untuk memeriksa status klaim, gunakan `check_claim_agent`.\n"
-    "   - Untuk memeriksa hasil diagnosis terakhir, gunakan `diagnosis_agent`.\n"
+    "   - Untuk memeriksa hasil diagnosis terakhir, gunakan `check_diagnosis_agent`.\n"
     "   - Apabila pasien terdaftar di BPJS Kesehatan, cek apakah hasil diagnosis penyakitnya termasuk kedalam pelayanan kesehatan yang tidak dijamin BPJS Kesehatan dengan menggunakan `bpjs_check_agent`.\n"
     "\n"
     "3. **Sampaikan Hasil**: Setelah menerima respons dari sub-agen, sampaikan seluruh informasinya dengan jelas kepada pengguna.\n"
@@ -87,7 +87,7 @@ root_agent = Agent(
         create_appointment_agent,
         check_benefits_agent,
         check_claim_agent,
-        diagnosis_agent,
+        check_diagnosis_agent,
         bpjs_check_agent
     ],
     tools=[general_search_tool]
