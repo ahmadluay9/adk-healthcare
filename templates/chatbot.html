@@ -39,69 +39,43 @@
 </head>
 <body class="flex items-center justify-center min-h-screen">
 
-    <div class="w-full max-w-6xl mx-auto p-4">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Main Chat Interface -->
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl flex flex-col h-[90vh]">
-                <!-- Header -->
-                <header class="flex items-center justify-between p-4 border-b border-gray-200">
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <img src="https://placehold.co/48x48/1d4ed8/ffffff?text=KSS" alt="Klinik Sehat Selalu" class="w-12 h-12 rounded-full">
-                            <span id="status-indicator" class="absolute bottom-0 right-0 block h-3 w-3 bg-gray-400 rounded-full border-2 border-white"></span>
-                        </div>
-                        <div>
-                            <h1 class="font-bold text-lg text-gray-800">Asisten Klinis AI</h1>
-                            <p id="status-text" class="text-sm text-gray-500 font-medium">Offline</p>
-                        </div>
+    <div class="w-full max-w-3xl mx-auto p-4">
+        <!-- Main Chat Interface -->
+        <div class="bg-white rounded-2xl shadow-xl flex flex-col h-[90vh]">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <img src="https://placehold.co/48x48/1d4ed8/ffffff?text=KSS" alt="Klinik Sehat Selalu" class="w-12 h-12 rounded-full">
+                        <span id="status-indicator" class="absolute bottom-0 right-0 block h-3 w-3 bg-gray-400 rounded-full border-2 border-white"></span>
                     </div>
-                    <button class="text-gray-400 hover:text-gray-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    <div>
+                        <h1 class="font-bold text-lg text-gray-800">Asisten Klinis AI</h1>
+                        <p id="status-text" class="text-sm text-gray-500 font-medium">Offline</p>
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </button>
+            </header>
+
+            <!-- Chat Messages -->
+            <div id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-6 chat-container">
+                <!-- Messages will be dynamically added here -->
+            </div>
+
+            <!-- User Input -->
+            <div class="p-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="user-input" class="w-full bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik pesan Anda..." disabled>
+                    <button id="mic-btn" class="text-gray-500 p-3 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                     </button>
-                </header>
-
-                <!-- Chat Messages -->
-                <div id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-6 chat-container">
-                    <!-- Messages will be dynamically added here -->
-                </div>
-
-                <!-- User Input -->
-                <div class="p-4 bg-gray-50 border-t border-gray-200">
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="user-input" class="w-full bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik pesan Anda..." disabled>
-                        <button id="mic-btn" class="text-gray-500 p-3 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                        </button>
-                        <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
+                    <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
                 </div>
             </div>
-
-            <!-- Patient Details Card -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 h-fit">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Detail Pasien</h2>
-                <div id="patient-card-unverified" class="text-center py-8">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <p class="mt-4 text-gray-500">Verifikasi dibutuhkan untuk melihat detail pasien.</p>
-                </div>
-                <div id="patient-card-verified" class="hidden space-y-4">
-                    <div class="flex items-center gap-4">
-                        <img id="patient-avatar" src="https://placehold.co/64x64/f97316/ffffff?text=PV" alt="Patient Avatar" class="w-16 h-16 rounded-full">
-                        <div>
-                            <p class="font-bold text-lg text-gray-900" id="patient-name"></p>
-                            <p class="text-sm text-gray-500" id="patient-mrn"></p>
-                        </div>
-                    </div>
-                    <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm font-medium text-gray-500">Tanggal Lahir</p>
-                        <p class="font-semibold text-gray-800" id="patient-dob"></p>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -119,12 +93,6 @@
         const micBtn = document.getElementById('mic-btn');
         const statusIndicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
-        const patientCardUnverified = document.getElementById('patient-card-unverified');
-        const patientCardVerified = document.getElementById('patient-card-verified');
-        const patientNameEl = document.getElementById('patient-name');
-        const patientMrnEl = document.getElementById('patient-mrn');
-        const patientDobEl = document.getElementById('patient-dob');
-        const patientAvatarEl = document.getElementById('patient-avatar');
         
         // --- Speech Recognition Setup ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -218,23 +186,6 @@
             scrollToBottom();
         }
 
-        const showVerifiedPatientCard = (patientData) => {
-            const { name, mrn, dob, initials } = patientData;
-            patientNameEl.textContent = name;
-            patientMrnEl.textContent = mrn ? `MRN: ${mrn}` : '';
-            if (dob) {
-                const date = new Date(dob);
-                // Add timezone offset to prevent day-before issues
-                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                patientDobEl.textContent = date.toLocaleDateString('id-ID', options);
-            }
-            patientAvatarEl.src = `https://placehold.co/64x64/f97316/ffffff?text=${initials}`;
-            
-            patientCardUnverified.classList.add('hidden');
-            patientCardVerified.classList.remove('hidden');
-        };
-
         const setUIState = (enabled, message = '') => {
             userInput.disabled = !enabled;
             sendBtn.disabled = !enabled;
@@ -255,23 +206,7 @@
                 removeTypingIndicator();
                 addMessage(part.text, author);
             } 
-            // Handle patient verification data from functionResponse
-            else if (part.functionResponse && part.functionResponse.name === 'verifikasi_pasien') {
-                const result = part.functionResponse.response?.result?.[0];
-                if (result) {
-                    const patientName = `${result.name[0].given.join(' ')} ${result.name[0].family}`;
-                    const patientMrn = result.identifier?.find(id => id.type?.coding?.[0]?.code === 'MR')?.value;
-                    const patientDob = result.birthDate;
-                    const patientInitials = `${result.name[0].given[0][0]}${result.name[0].family[0]}`;
-
-                    showVerifiedPatientCard({
-                        name: patientName,
-                        mrn: patientMrn,
-                        dob: patientDob,
-                        initials: patientInitials
-                    });
-                }
-            }
+            // NOTE: The patient verification logic has been removed.
         };
 
         const sendMessageToBackend = async (messageText) => {
@@ -304,11 +239,11 @@
                 
                 for (const line of eventLines) {
                      try {
-                        const jsonStr = line.substring(5);
-                        const data = JSON.parse(jsonStr);
-                        processSseEvent(data);
+                         const jsonStr = line.substring(5);
+                         const data = JSON.parse(jsonStr);
+                         processSseEvent(data);
                      } catch (e) {
-                        console.error('Error parsing event line:', e, line);
+                         console.error('Error parsing event line:', e, line);
                      }
                 }
 
@@ -356,8 +291,10 @@
                 statusText.textContent = 'Online';
                 statusText.classList.remove('text-gray-500');
                 statusText.classList.add('text-green-600');
-                setUIState(true, 'Ketik "halo" untuk memulai');
                 addSystemEvent('Session started. You are now connected.');
+
+                // Automatically send 'halo' to the backend without showing it in the chat
+                sendMessageToBackend('halo');
 
             } catch (error) {
                 console.error('Initialization failed:', error);

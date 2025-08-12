@@ -5,7 +5,7 @@ services_id = (
     "- Pendaftaran pasien baru\n"
     "- Membuat janji temu dengan dokter\n"
     "- Mengecek jadwal janji temu\n"
-    "- Mengecek hasil pemeriksaan terakhir\n"
+    # "- Mengecek hasil pemeriksaan terakhir\n"
     "- Mencari informasi umum (lokasi, jam operasional, daftar dokter, jadwal praktik dokter)"
 )
 
