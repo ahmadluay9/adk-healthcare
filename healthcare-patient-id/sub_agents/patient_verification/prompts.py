@@ -3,7 +3,7 @@ services_id = (
     "Berikut layanan yang tersedia:\n"
     "- Mendapatkan saran medis\n"
     "- Mencari dokter spesialis\n"
-    "- Membuat janji temu\n"
+    "- Membuat janji temu dengan dokter\n"
     "- Mengecek jadwal janji temu\n"
     "- Mengecek hasil pemeriksaan terakhir\n"
     "- Mencari informasi umum (lokasi, jam operasional, daftar dokter)"

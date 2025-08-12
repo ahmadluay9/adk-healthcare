@@ -6,7 +6,6 @@ import google.auth.transport.requests
 from urllib.parse import quote
 from typing import Optional
 from dotenv import load_dotenv
-import locale
 import re
 
 # Environment Configuration
@@ -371,13 +370,13 @@ def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional
     return {"status": "success", "report": f"{reminder_text}\n{queue_text}\n \n Ada lagi yang bisa saya bantu?"}
 
 # Function to create a new appointment after verification
-def buat_janji_temu(nama_dokter: str, tanggal_dan_waktu: str, nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+def buat_janji_temu(nama_dokter: str, nama_poli: str, tanggal_dan_waktu: str, nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
     """Membuat janji temu baru setelah verifikasi."""
     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
     if error: return error
     id_pasien = patient_resource["id"]
 
-    # 1. Coba cari dengan nama lengkap yang diberikan
+    # 1. Coba cari nama lengkap dengan gelar yang diberikan
     practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(nama_dokter)}")
     
     # 2. Jika tidak ditemukan, bersihkan gelar dan coba lagi
@@ -400,25 +399,25 @@ def buat_janji_temu(nama_dokter: str, tanggal_dan_waktu: str, nama_depan: Option
     # --- Logika Cek Jadwal Praktik Dokter ---
     role_bundle = make_fhir_request('GET', f"PractitionerRole?practitioner=Practitioner/{id_dokter}")
     is_available = False
-    nama_poli = "Poli Umum" # Default
-    if role_bundle and role_bundle.get("total", 0) > 0:
-        for role_entry in role_bundle.get("entry", []):
-            role = role_entry.get("resource", {})
-            if "specialty" in role and len(role["specialty"]) > 0:
-                nama_poli = role["specialty"][0].get("text", nama_poli)
-            for available in role.get("availableTime", []):
-                day_of_week = available.get("daysOfWeek", [])
-                start_hour = available.get("availableStartTime", "00:00")
-                end_hour = available.get("availableEndTime", "23:59")
-                
-                if start_time.strftime('%a').lower() in day_of_week and start_hour <= start_time.strftime('%H:%M') <= end_hour:
-                    is_available = True
-                    break
-            if is_available:
+
+    if not role_bundle or role_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": f"Dokter {nama_dokter} tidak praktik di {nama_poli}."}
+
+    for role_entry in role_bundle.get("entry", []):
+        role = role_entry.get("resource", {})
+        for available in role.get("availableTime", []):
+            day_of_week = available.get("daysOfWeek", [])
+            start_hour = available.get("availableStartTime", "00:00")
+            end_hour = available.get("availableEndTime", "23:59")
+            
+            if start_time.strftime('%a').lower() in day_of_week and start_hour <= start_time.strftime('%H:%M') <= end_hour:
+                is_available = True
                 break
+        if is_available:
+            break
     
     if not is_available:
-        return {"status": "error", "error_message": f"Dokter {nama_dokter} tidak tersedia pada jadwal yang Anda minta."}
+        return {"status": "error", "error_message": f"Dokter {nama_dokter} tidak tersedia pada jadwal yang Anda minta di {nama_poli}."}
 
     # --- Logika Nomor Antrian ---
     appointment_date_str = start_time.strftime('%Y-%m-%d')

@@ -103,6 +103,13 @@
             <h2 class="text-3xl font-bold text-center mb-12">Layanan Medis Kami</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://placehold.co/600x400/fffbeb/f59e0b?text=Poli+Umum" alt="Poli Umum" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">Poli Umum</h3>
+                        <p class="text-gray-600">Layanan konsultasi, pemeriksaan, dan penanganan medis awal untuk berbagai keluhan kesehatan.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
                     <img src="https://placehold.co/600x400/e0f2fe/0ea5e9?text=Poli+Jantung" alt="Poli Jantung" class="w-full h-48 object-cover">
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">Poli Jantung (Kardiologi)</h3>
@@ -137,19 +144,19 @@
                         <p class="text-gray-600">Menyediakan layanan X-Ray, CT Scan, MRI, dan USG dengan teknologi modern.</p>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
-                    <img src="https://placehold.co/600x400/fefce8/eab308?text=Laboratorium" alt="Laboratorium" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold mb-2">Laboratorium Klinik</h3>
-                        <p class="text-gray-600">Pemeriksaan laboratorium yang akurat untuk menunjang diagnosis dokter.</p>
-                    </div>
-                </div>
             </div>
         </section>
 
         <section id="dokter" class="section">
             <h2 class="text-3xl font-bold text-center mb-12">Temukan Dokter Kami</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
+                    <img src="https://placehold.co/200x200/fffbeb/f59e0b?text=dr.+Dian" alt="Foto dr. Dian Permata" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-yellow-200">
+                    <h3 class="text-lg font-bold">dr. Dian Permata</h3>
+                    <p class="text-yellow-600 font-semibold">Dokter Umum</p>
+                    <p class="text-gray-600 text-sm mt-2"><b>Jadwal:</b> Senin - Sabtu (08:00 - 15:00)</p>
+                    <button class="mt-4 bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-200 transition">Lihat Profil</button>
+                </div>
                 <div class="bg-white rounded-lg shadow-md text-center p-6 transform hover:-translate-y-2 transition-transform duration-300">
                     <img src="https://placehold.co/200x200/e0f2fe/0ea5e9?text=dr.+Budi" alt="Foto dr. Budi Santoso, Sp.JP" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-blue-200">
                     <h3 class="text-lg font-bold">dr. Budi Santoso, Sp.JP</h3>
@@ -274,6 +281,7 @@
                         <label for="layanan-pilihan" class="block text-sm font-medium text-gray-700">Pilih Layanan/Poli</label>
                         <select id="layanan-pilihan" name="layanan-pilihan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             <option value="">-- Pilih salah satu --</option>
+                            <option value="umum">Poli Umum</option>
                             <option value="jantung">Poli Jantung (Kardiologi)</option>
                             <option value="anak">Poli Anak (Pediatri)</option>
                             <option value="penyakit-dalam">Poli Penyakit Dalam</option>

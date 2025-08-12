@@ -1,9 +1,6 @@
 steps:
-  # Langkah 1: Akses Rahasia dari Secret Manager
-  # Langkah ini mengambil variabel lingkungan Anda (dari file .env) yang telah disimpan dengan aman di Google Secret Manager
-  # dan menuliskannya ke dalam file .env sementara yang akan digunakan oleh Cloud Run.
 
-  # Langkah 2: Bangun (Build) Container Image
+  # Langkah 1: Bangun (Build) Container Image
   # Menggunakan Dockerfile di direktori Anda untuk membangun sebuah container image.
   # Image ini diberi tag dengan ID commit unik untuk pelacakan versi.
   - name: 'gcr.io/cloud-builders/docker'
@@ -13,7 +10,7 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
       - '.'
 
-  # Langkah 3: Dorong (Push) Container Image
+  # Langkah 2: Dorong (Push) Container Image
   # Mendorong image yang baru saja dibangun ke Google Artifact Registry,
   # repositori pribadi untuk container Anda.
   - name: 'gcr.io/cloud-builders/docker'
@@ -21,7 +18,7 @@ steps:
       - 'push'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
 
-  # Langkah 4: Deploy ke Cloud Run
+  # Langkah 3: Deploy ke Cloud Run
   # Mengambil image dari Artifact Registry dan mendeploy-nya sebagai revisi baru
   # ke layanan Cloud Run Anda. Langkah ini juga menerapkan semua variabel lingkungan dari file .env yang diambil sebelumnya.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -42,7 +39,6 @@ images:
 substitutions:
   _SERVICE_NAME: 'healthcare-patient-service'
   _REGION: 'asia-southeast2'
-  _SECRET_ID: 'healthcare-patient-env'
 
 options:
   logging: CLOUD_LOGGING_ONLY
