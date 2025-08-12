@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- IMPORTANT: Client ID has been updated -->
+    <meta name="google-signin-client_id" content="158103152291-qdfc555ak17qab6lmu0baq2bnemvt66r.apps.googleusercontent.com">
+    <title>Klinik Sehat Selalu - Chat & JSON Viewer</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .chat-bubble-user {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+        }
+        /* Custom scrollbar for a cleaner look */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* Slate-400 */
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Slate-500 */
+        }
+        .json-viewer {
+            background-color: #111827; /* Gray-900 */
+        }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        /* Hide elements until authenticated */
+        .auth-hidden { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="w-full max-w-md mx-auto text-center">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <img src="https://placehold.co/80x80/1d4ed8/ffffff?text=KSS" alt="Klinik Sehat Selalu" class="w-20 h-20 rounded-full mx-auto mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">Welcome to the AI Assistant</h1>
+            <p class="text-gray-600 mt-2 mb-6">Please sign in to continue.</p>
+            <div id="google-signin-btn-container">
+                <div id="google-signin-btn" class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="w-full max-w-6xl mx-auto p-4 auth-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Main Chat Interface -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl flex flex-col h-[90vh]">
+                <!-- Header -->
+                <header class="flex items-center justify-between p-4 border-b border-gray-200">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <img id="user-avatar" src="https://placehold.co/48x48/1d4ed8/ffffff?text=KSS" alt="User Avatar" class="w-12 h-12 rounded-full">
+                            <span id="status-indicator" class="absolute bottom-0 right-0 block h-3 w-3 bg-gray-400 rounded-full border-2 border-white"></span>
+                        </div>
+                        <div>
+                            <h1 id="user-name" class="font-bold text-lg text-gray-800">Asisten Klinis AI</h1>
+                            <p id="status-text" class="text-sm text-gray-500 font-medium">Offline</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <button id="new-session-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors" title="New Session">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        </button>
+                        <button onclick="signOut();" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors" title="Sign Out">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Chat Messages -->
+                <div id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar"></div>
+                <!-- User Input -->
+                <div class="p-4 bg-gray-50 border-t border-gray-200">
+                    <div class="flex items-center gap-4">
+                        <input type="text" id="user-input" class="w-full bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik pesan Anda..." disabled>
+                        <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="flex flex-col gap-8">
+                <!-- Patient Details Card -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 h-fit">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Detail Pasien</h2>
+                    <div id="patient-card-unverified" class="text-center py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p class="mt-4 text-gray-500">Verifikasi dibutuhkan untuk melihat detail pasien.</p>
+                    </div>
+                    <div id="patient-card-verified" class="hidden space-y-4">
+                        <div class="flex items-center gap-4">
+                            <img id="patient-avatar" src="https://placehold.co/64x64/f97316/ffffff?text=PV" alt="Patient Avatar" class="w-16 h-16 rounded-full">
+                            <div>
+                                <p class="font-bold text-lg text-gray-900" id="patient-name"></p>
+                                <p class="text-sm text-gray-500" id="patient-mrn"></p>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 pt-4">
+                            <p class="text-sm font-medium text-gray-500">Tanggal Lahir</p>
+                            <p class="font-semibold text-gray-800" id="patient-dob"></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- JSON Response Viewer -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 flex-1 flex flex-col min-h-0">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Raw Backend Response</h2>
+                        <div class="flex items-center gap-2">
+                            <button id="prev-json-btn" class="nav-btn text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors" title="Previous Response">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <span id="json-counter" class="text-sm text-gray-600 font-medium">0 / 0</span>
+                            <button id="next-json-btn" class="nav-btn text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors" title="Next Response">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="json-viewer text-white text-xs font-mono rounded-lg p-4 flex-1 overflow-auto custom-scrollbar">
+                        <pre><code id="json-output-area">{ "status": "Waiting for user to sign in..." }</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- API Configuration ---
+        const API_URL = "https://healthcare-patient-service-158103152291.asia-southeast2.run.app";
+        const APP_NAME = "healthcare-patient";
+        let USER_ID = ``; // Will be set on Google Sign-In
+        let SESSION_ID = `session_${Date.now()}`;
+
+        // --- State ---
+        let allResponses = [];
+        let currentResponseIndex = -1;
+
+        // --- Color Hashing for Agents ---
+        const stringToHashCode = (str) => {
+            let hash = 0;
+            if (str.length === 0) return hash;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash |= 0; // Convert to 32bit integer
+            }
+            return Math.abs(hash);
+        };
+        const agentColorPalette = [
+            { avatar: '16a34a', bubble: 'bg-green-100', text: 'text-green-700' }, // Green
+            { avatar: 'f59e0b', bubble: 'bg-amber-100', text: 'text-amber-700' }, // Amber
+            { avatar: '0d9488', bubble: 'bg-teal-100', text: 'text-teal-700' },   // Teal
+            { avatar: '6d28d9', bubble: 'bg-violet-100', text: 'text-violet-700' }, // Violet
+            { avatar: 'db2777', bubble: 'bg-pink-100', text: 'text-pink-700' },   // Pink
+            { avatar: '0ea5e9', bubble: 'bg-sky-100', text: 'text-sky-700' }      // Sky
+        ];
+        const getAgentStyling = (agentName) => {
+            const hash = stringToHashCode(agentName);
+            return agentColorPalette[hash % agentColorPalette.length];
+        };
+
+        // --- DOM Elements ---
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const newSessionBtn = document.getElementById('new-session-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const userNameEl = document.getElementById('user-name');
+        const userAvatarEl = document.getElementById('user-avatar');
+        const patientCardUnverified = document.getElementById('patient-card-unverified');
+        const patientCardVerified = document.getElementById('patient-card-verified');
+        const patientNameEl = document.getElementById('patient-name');
+        const patientMrnEl = document.getElementById('patient-mrn');
+        const patientDobEl = document.getElementById('patient-dob');
+        const patientAvatarEl = document.getElementById('patient-avatar');
+        const jsonOutputArea = document.getElementById('json-output-area');
+        const prevJsonBtn = document.getElementById('prev-json-btn');
+        const nextJsonBtn = document.getElementById('next-json-btn');
+        const jsonCounter = document.getElementById('json-counter');
+        
+        // --- Authentication ---
+        function onSignIn(googleUser) {
+            const profile = googleUser.getBasicProfile();
+            USER_ID = profile.getId(); // Use Google ID as the user ID
+            
+            // Update UI with user info
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+            userNameEl.textContent = profile.getName();
+            userAvatarEl.src = profile.getImageUrl();
+
+            initializeSession();
+        }
+
+        function signOut() {
+            try {
+                const auth2 = gapi.auth2.getAuthInstance();
+                if (auth2) {
+                    auth2.signOut().then(function () {
+                        console.log('User signed out.');
+                        // Reset UI to login state
+                        loginScreen.style.display = 'block';
+                        mainApp.style.display = 'none';
+                        USER_ID = '';
+                        chatContainer.innerHTML = '';
+                        allResponses = [];
+                        currentResponseIndex = -1;
+                        updateJsonNav();
+                    });
+                } else {
+                     // Fallback if auth instance isn't ready
+                     location.reload();
+                }
+            } catch (error) {
+                console.error("Sign out error:", error);
+                location.reload(); // Force a reload as a fallback
+            }
+        }
+
+        // --- Helper Functions ---
+        const scrollToBottom = () => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        const createMessageBubble = (text, author, timestamp) => {
+            const bubble = document.createElement('div');
+            const isUser = author === 'user';
+
+            let authorDisplay, avatarInitial, avatarColor, bubbleBgColor, authorTextColor;
+
+            if (isUser) {
+                authorDisplay = 'You';
+                avatarInitial = 'U';
+                avatarColor = '3b82f6';
+                bubbleBgColor = 'chat-bubble-user';
+                authorTextColor = 'text-gray-500'; 
+            } else {
+                const styling = getAgentStyling(author);
+                authorDisplay = author;
+                avatarInitial = author.substring(0, 2).toUpperCase();
+                avatarColor = styling.avatar;
+                bubbleBgColor = styling.bubble;
+                authorTextColor = styling.text;
+            }
+
+            bubble.className = `flex items-end gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
+            const avatar = `<img src="https://placehold.co/40x40/${avatarColor}/ffffff?text=${avatarInitial}" alt="${authorDisplay}" class="w-10 h-10 rounded-full ${isUser ? 'order-2' : 'order-1'}">`;
+            
+            bubble.innerHTML = `
+                ${!isUser ? avatar : ''}
+                <div class="max-w-md">
+                    <div class="flex items-baseline gap-2 ${isUser ? 'justify-end' : ''}">
+                         <div class="text-xs font-semibold ${authorTextColor}">${authorDisplay}</div>
+                         <div class="text-xs text-gray-400">${timestamp}</div>
+                    </div>
+                    <div class="mt-1 p-3 rounded-2xl ${bubbleBgColor}">
+                        <p class="text-sm ${isUser ? 'text-white' : 'text-gray-800'}">${text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</p>
+                    </div>
+                </div>
+                ${isUser ? avatar : ''}
+            `;
+            return bubble;
+        };
+
+        const createSystemEventBubble = (text) => {
+            const bubble = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+            bubble.className = 'text-center my-2';
+            bubble.innerHTML = `
+                <div class="inline-flex items-center gap-2 text-xs text-purple-600 bg-purple-100 rounded-full px-3 py-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0L8 7.45l-4.45.65c-1.6.23-2.24 2.18-1.07 3.33l3.23 3.14-.76 4.43c-.27 1.58 1.37 2.79 2.81 2.08l3.98-2.09 3.98 2.09c1.44.71 3.08-.5 2.81-2.08l-.76-4.43 3.23-3.14c1.17-1.15.53-3.1-1.07-3.33L12 7.45l-.51-4.28z" clip-rule="evenodd" /></svg>
+                    <span>${text}</span>
+                </div>
+            `;
+            return bubble;
+        };
+        
+        const showTypingIndicator = () => {
+            if (document.getElementById('typing-indicator')) return;
+            const typingBubble = document.createElement('div');
+            typingBubble.id = 'typing-indicator';
+            typingBubble.className = 'flex items-end gap-3 justify-start';
+            typingBubble.innerHTML = `
+                <img src="https://placehold.co/40x40/6b7280/ffffff?text=AI" class="w-10 h-10 rounded-full">
+                <div class="max-w-md p-3 rounded-2xl bg-gray-200">
+                    <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0s;"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></span>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(typingBubble);
+            scrollToBottom();
+        };
+
+        const removeTypingIndicator = () => {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        };
+
+        const addMessage = (text, author) => {
+            const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const bubble = createMessageBubble(text, author, timestamp);
+            chatContainer.appendChild(bubble);
+            scrollToBottom();
+        };
+
+        const addSystemEvent = (text) => {
+            const bubble = createSystemEventBubble(text);
+            chatContainer.appendChild(bubble);
+            scrollToBottom();
+        }
+
+        const resetPatientCard = () => {
+            patientCardVerified.classList.add('hidden');
+            patientCardUnverified.classList.remove('hidden');
+            patientNameEl.textContent = '';
+            patientMrnEl.textContent = '';
+            patientDobEl.textContent = '';
+            patientAvatarEl.src = 'https://placehold.co/64x64/f97316/ffffff?text=PV';
+        };
+
+        const showVerifiedPatientCard = (patientData) => {
+            const { name, mrn, dob, initials } = patientData;
+            patientNameEl.textContent = name;
+            patientMrnEl.textContent = mrn ? `MRN: ${mrn}` : '';
+            if (dob) {
+                const date = new Date(dob);
+                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                patientDobEl.textContent = date.toLocaleDateString('id-ID', options);
+            }
+            patientAvatarEl.src = `https://placehold.co/64x64/f97316/ffffff?text=${initials}`;
+            
+            patientCardUnverified.classList.add('hidden');
+            patientCardVerified.classList.remove('hidden');
+        };
+
+        const setUIState = (enabled, message = '') => {
+            userInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+            if (message) userInput.placeholder = message;
+        };
+
+        const updateJsonViewer = (data) => {
+            jsonOutputArea.textContent = JSON.stringify(data, null, 2);
+        };
+        
+        const updateJsonNav = () => {
+            if (allResponses.length === 0) {
+                jsonCounter.textContent = '0 / 0';
+                prevJsonBtn.disabled = true;
+                nextJsonBtn.disabled = true;
+                updateJsonViewer({ status: "Waiting for data..." });
+                return;
+            }
+            
+            jsonCounter.textContent = `${currentResponseIndex + 1} / ${allResponses.length}`;
+            prevJsonBtn.disabled = currentResponseIndex <= 0;
+            nextJsonBtn.disabled = currentResponseIndex >= allResponses.length - 1;
+            
+            updateJsonViewer(allResponses[currentResponseIndex]);
+        };
+
+        const processSseEvent = (data) => {
+            if (!data || !data.content || !data.content.parts) return;
+            
+            const part = data.content.parts[0];
+            const author = data.author || 'Bot';
+
+            if (part.text) {
+                removeTypingIndicator();
+                addMessage(part.text, author);
+            } 
+            else if (part.functionCall) {
+                addSystemEvent(`Tool Call: <b>${part.functionCall.name}</b> by ${author}`);
+            } 
+            else if (data.actions?.transferToAgent) {
+                addSystemEvent(`Transferring to <b>${data.actions.transferToAgent}</b>`);
+            }
+            else if (part.functionResponse && part.functionResponse.name === 'verifikasi_pasien') {
+                const result = part.functionResponse.response?.result?.[0];
+                if (result) {
+                    const patientName = `${result.name[0].given.join(' ')} ${result.name[0].family}`;
+                    const patientMrn = result.identifier?.find(id => id.type?.coding?.[0]?.code === 'MR')?.value;
+                    const patientDob = result.birthDate;
+                    const patientInitials = `${result.name[0].given[0][0]}${result.name[0].family[0]}`;
+
+                    showVerifiedPatientCard({
+                        name: patientName,
+                        mrn: patientMrn,
+                        dob: patientDob,
+                        initials: patientInitials
+                    });
+                }
+            }
+        };
+
+        const sendMessageToBackend = async (messageText) => {
+            showTypingIndicator();
+            setUIState(false, 'Waiting for response...');
+
+            try {
+                const response = await fetch(`${API_URL}/run_sse`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_name: APP_NAME,
+                        user_id: USER_ID,
+                        session_id: SESSION_ID,
+                        new_message: { role: "user", parts: [{ text: messageText }] },
+                        streaming: false
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseText = await response.text();
+                const eventLines = responseText.trim().split('\n').filter(line => line.startsWith('data:'));
+                
+                for (const line of eventLines) {
+                     try {
+                        const jsonStr = line.substring(5);
+                        const data = JSON.parse(jsonStr);
+                        allResponses.push(data);
+                        processSseEvent(data);
+                    } catch (e) {
+                        console.error('Error parsing event line:', e, line);
+                    }
+                }
+                
+                if (eventLines.length > 0) {
+                    currentResponseIndex = allResponses.length - 1;
+                    updateJsonNav();
+                }
+
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                addMessage(`Sorry, I couldn't connect to the server. Please try again later.`, 'System');
+            } finally {
+                removeTypingIndicator();
+                setUIState(true, 'Ketik pesan Anda...');
+            }
+        };
+
+        const handleUserInput = () => {
+            const input = userInput.value.trim();
+            if (!input) return;
+            
+            addMessage(input, 'user');
+            sendMessageToBackend(input);
+            userInput.value = '';
+        };
+
+        const initializeSession = async () => {
+            chatContainer.innerHTML = '';
+            resetPatientCard();
+            allResponses = [];
+            currentResponseIndex = -1;
+            SESSION_ID = `session_${Date.now()}`;
+            updateJsonNav();
+            setUIState(false, 'Connecting to session...');
+            try {
+                const response = await fetch(`${API_URL}/apps/${APP_NAME}/users/${USER_ID}/sessions/${SESSION_ID}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) throw new Error('Session creation failed');
+                
+                const sessionData = await response.json();
+                allResponses.push(sessionData);
+                currentResponseIndex = 0;
+                updateJsonNav();
+
+                statusIndicator.classList.remove('bg-gray-400', 'bg-red-500');
+                statusIndicator.classList.add('bg-green-500');
+                statusText.textContent = 'Online';
+                statusText.classList.remove('text-gray-500');
+                statusText.classList.add('text-green-600');
+                setUIState(true, 'Ketik "halo" untuk memulai');
+                addSystemEvent('Session started');
+
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                updateJsonViewer({ error: "Initialization failed", message: error.message });
+                statusText.textContent = 'Connection Failed';
+                statusIndicator.classList.add('bg-red-500');
+                addMessage('Could not connect to the clinical assistant. Please refresh the page to try again.', 'System');
+            }
+        };
+        
+        // --- Event Listeners ---
+        sendBtn.addEventListener('click', handleUserInput);
+        newSessionBtn.addEventListener('click', initializeSession);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleUserInput();
+            }
+        });
+        prevJsonBtn.addEventListener('click', () => {
+            if (currentResponseIndex > 0) {
+                currentResponseIndex--;
+                updateJsonNav();
+            }
+        });
+        nextJsonBtn.addEventListener('click', () => {
+            if (currentResponseIndex < allResponses.length - 1) {
+                currentResponseIndex++;
+                updateJsonNav();
+            }
+        });
+
+    </script>
+</body>
+</html>
