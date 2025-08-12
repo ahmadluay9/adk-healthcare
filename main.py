@@ -1,6 +1,9 @@
 import os
 import uvicorn
 from google.adk.cli.fast_api import get_fast_api_app
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +19,7 @@ ARTIFACT_SERVICE_URI=os.getenv("ARTIFACT_URI")
 
 # --- Inisialisasi Aplikasi ADK ---
 # get_fast_api_app akan menemukan folder healthcare-patient secara otomatis
-app = get_fast_api_app(
+app: FastAPI = get_fast_api_app(
     agents_dir=ROOT_DIR,
     session_service_uri=SESSION_SERVICE_URI,
     allow_origins=ALLOWED_ORIGINS,
@@ -24,6 +27,15 @@ app = get_fast_api_app(
     # Kita tidak menggunakan UI bawaan ADK
     web=False, 
 )
+
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/")
+async def serve_index(request: Request):
+    """
+    This endpoint serves the index.html file at the root URL.
+    """
+    return templates.TemplateResponse("chatbot.html", {"request": request})
 
 # --- Jalankan Server ---
 if __name__ == "__main__":
