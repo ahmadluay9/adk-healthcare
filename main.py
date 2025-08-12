@@ -2,11 +2,15 @@ import os
 import uvicorn
 from google.adk.cli.fast_api import get_fast_api_app
 from dotenv import load_dotenv
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 # --- Konfigurasi ---
 # Direktori root tempat main.py berada
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Direktori untuk file template seperti HTML
+TEMPLATES_DIR = os.path.join(ROOT_DIR, "templates")
 # URI untuk layanan sesi (menggunakan SQLite di dalam container)
 SESSION_SERVICE_URI = "sqlite:///./sessions.db"
 # Asal yang diizinkan untuk CORS
@@ -24,6 +28,22 @@ app = get_fast_api_app(
     # Kita tidak menggunakan UI bawaan ADK
     web=False, 
 )
+
+# --- Rute untuk mengarahkan ke chatbot.html ---
+@app.get("/", include_in_schema=False)
+async def read_root():
+    """
+    Mengarahkan pengguna dari rute root ke halaman chatbot.
+    """
+    return RedirectResponse(url="/chatbot.html")
+
+# --- Sajikan File Statis dari folder 'templates' ---
+# Pastikan direktori 'templates' ada
+os.makedirs(TEMPLATES_DIR, exist_ok=True)
+
+# Mount direktori 'templates' untuk menyajikan file seperti chatbot.html
+# Ini memungkinkan FastAPI untuk menemukan dan mengirimkan file saat browser memintanya.
+app.mount("/", StaticFiles(directory=TEMPLATES_DIR, html=True), name="templates")
 
 # --- Jalankan Server ---
 if __name__ == "__main__":
