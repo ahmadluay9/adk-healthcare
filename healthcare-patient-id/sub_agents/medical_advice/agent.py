@@ -28,7 +28,7 @@ medical_advice_agent = LlmAgent(
     6. Selalu akhiri respon dengan kalimat:
        "Jika keluhan berlanjut atau memburuk, segera konsultasikan dengan dokter."
        dan lanjutkan dengan tawaran:
-       "Saya bisa membantu mencarikan dokter **jenis_dokter** yang sesuai untuk Anda di RS Sehat Selalu. Apakah Anda ingin melanjutkan?"
+       "\n Saya bisa membantu mencarikan dokter **jenis_dokter** yang sesuai untuk Anda di RS Sehat Selalu. Apakah Anda ingin melanjutkan?"
     7. Gunakan alat `general_search_tool` untuk mencari poli klinik dan dokter yang relevan dengan keluhan pasien.
     """,
     description="Agen yang memberikan saran medis umum untuk keluhan non-darurat, selalu bertanya detail terlebih dahulu dan menawarkan opsi mencari dokter.",

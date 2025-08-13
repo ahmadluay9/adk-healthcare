@@ -372,64 +372,88 @@ def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional
 # Function to create a new appointment after verification
 def buat_janji_temu(nama_dokter: str, nama_poli: str, tanggal_dan_waktu: str, nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
     """Membuat janji temu baru setelah verifikasi."""
+    # 1. Verifikasi Pasien
+    print(f"Input Diterima: nama_dokter='{nama_dokter}', nama_poli='{nama_poli}', tanggal_dan_waktu='{tanggal_dan_waktu}', nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}', mrn='{mrn}'")
     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
-    if error: return error
+    if error: 
+        return error
     id_pasien = patient_resource["id"]
 
-    # 1. Coba cari nama lengkap dengan gelar yang diberikan
+    # 2. Cari Dokter berdasarkan nama (misal: nama belakang)
     practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(nama_dokter)}")
     
-    # 2. Jika tidak ditemukan, bersihkan gelar dan coba lagi
     if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
-        # Menghapus gelar umum dari nama
-        cleaned_name = re.sub(r'(dr\.|Sp\.\w+)', '', nama_dokter, flags=re.IGNORECASE).strip()
-        practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(cleaned_name)}")
+        return {"status": "error", "error_message": f"Dokter dengan nama yang mengandung '{nama_dokter}' tidak ditemukan."}
+    
+    # Ambil resource dokter pertama yang ditemukan
+    practitioner_resource = practitioner_bundle["entry"][0]["resource"]
+    id_dokter = practitioner_resource["id"]
+    
+    # --- BAGIAN BARU: Menyusun Nama Lengkap Dokter ---
+    name_data = practitioner_resource.get("name", [{}])[0]
+    prefix = " ".join(name_data.get("prefix", []))
+    given = " ".join(name_data.get("given", []))
+    family = name_data.get("family", "")
+    suffix = ", ".join(name_data.get("suffix", []))
+    
+    # Gabungkan semua bagian nama, bersihkan spasi berlebih
+    parts = [prefix, given, family, suffix]
+    nama_lengkap_dokter = " ".join(part for part in parts if part).strip()
+    print(f"DEBUG: Nama lengkap dokter ditemukan: '{nama_lengkap_dokter}' dengan ID: {id_dokter}")
 
-    print(f"DEBUG: Practitioner Bundle: {practitioner_bundle}")
-    if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": f"Dokter dengan nama '{nama_dokter}' tidak ditemukan."}
-    id_dokter = practitioner_bundle["entry"][0]["resource"]["id"]
 
+    # 3. Validasi Jadwal, Poli, dan Ketersediaan Dokter
     try:
         start_time = datetime.datetime.fromisoformat(tanggal_dan_waktu).astimezone(datetime.timezone.utc)
         end_time = start_time + datetime.timedelta(minutes=30)
     except ValueError:
         return {"status": "error", "error_message": "Format tanggal dan waktu tidak valid. Gunakan format YYYY-MM-DDTHH:MM:SS."}
 
-    # --- Logika Cek Jadwal Praktik Dokter ---
-    role_bundle = make_fhir_request('GET', f"PractitionerRole?practitioner=Practitioner/{id_dokter}")
-    is_available = False
-
+    role_bundle = make_fhir_request('GET', f"PractitionerRole?practitioner=Practitioner/{id_dokter}&specialty:text={quote(nama_poli)}")
+    
     if not role_bundle or role_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": f"Dokter {nama_dokter} tidak praktik di {nama_poli}."}
+        return {"status": "error", "error_message": f"Dokter {nama_lengkap_dokter} tidak ditemukan praktik di {nama_poli}."}
 
+    is_available = False
     for role_entry in role_bundle.get("entry", []):
         role = role_entry.get("resource", {})
         for available in role.get("availableTime", []):
-            day_of_week = available.get("daysOfWeek", [])
+            day_of_week = [d[:3] for d in available.get("daysOfWeek", [])]
             start_hour = available.get("availableStartTime", "00:00")
             end_hour = available.get("availableEndTime", "23:59")
             
-            if start_time.strftime('%a').lower() in day_of_week and start_hour <= start_time.strftime('%H:%M') <= end_hour:
+            if start_time.strftime('%a').lower() in day_of_week and start_hour <= start_time.strftime('%H:%M:%S') < end_hour:
                 is_available = True
                 break
         if is_available:
             break
     
     if not is_available:
-        return {"status": "error", "error_message": f"Dokter {nama_dokter} tidak tersedia pada jadwal yang Anda minta di {nama_poli}."}
+        return {"status": "error", "error_message": f"Dokter {nama_lengkap_dokter} tidak tersedia pada jadwal yang Anda minta di {nama_poli}."}
 
-    # --- Logika Nomor Antrian ---
+    # 4. Hitung Nomor Antrian
     appointment_date_str = start_time.strftime('%Y-%m-%d')
     daily_appointments_bundle = make_fhir_request('GET', f"Appointment?actor=Practitioner/{id_dokter}&date={appointment_date_str}")
     queue_number = 1
     if daily_appointments_bundle and daily_appointments_bundle.get("total", 0) > 0:
         queue_number = daily_appointments_bundle.get("total", 0) + 1
 
-    appointment_body = { "resourceType": "Appointment", "status": "booked", "start": start_time.isoformat(), "end": end_time.isoformat(), "participant": [{"actor": {"reference": f"Patient/{id_pasien}"}, "status": "accepted"}, {"actor": {"reference": f"Practitioner/{id_dokter}"}, "status": "accepted"}] }
+    # 5. Buat Resource Appointment
+    appointment_body = {
+        "resourceType": "Appointment", "status": "booked",
+        "start": start_time.isoformat(timespec='seconds'), "end": end_time.isoformat(timespec='seconds'),
+        "participant": [
+            {"actor": {"reference": f"Patient/{id_pasien}"}, "status": "accepted"},
+            {"actor": {"reference": f"Practitioner/{id_dokter}"}, "status": "accepted"}
+        ]
+    }
+    
     new_appointment = make_fhir_request('POST', 'Appointment', payload=appointment_body)
-    if new_appointment:
-        return {"status": "success", "report": f"Janji temu baru di **{nama_poli}** dengan **{nama_dokter}** pada **{start_time.strftime('%d %B %Y pukul %H:%M')}** berhasil dibuat. Nomor antrian Anda adalah **{queue_number}**."}
+    
+    if new_appointment and new_appointment.get("id"):
+        # Gunakan `nama_lengkap_dokter` di laporan akhir
+        return {"status": "success", "report": f"Janji temu baru di **{nama_poli}** dengan **{nama_lengkap_dokter}** pada **{start_time.strftime('%d %B %Y pukul %H:%M')}** berhasil dibuat. Nomor antrian Anda adalah **{queue_number}**."}
+    
     return {"status": "error", "error_message": "Gagal membuat janji temu di sistem."}
 
 # Function to check insurance benefits after verification

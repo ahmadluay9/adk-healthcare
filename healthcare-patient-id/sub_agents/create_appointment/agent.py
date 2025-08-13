@@ -28,10 +28,12 @@ create_appointment_agent = LlmAgent(
            - Contoh salah: 'umum'\n
            - Contoh benar: 'Poli Umum'\n
            Gunakan kapitalisasi huruf awal setiap kata dan sertakan kata 'Poli'.\n
-        11. Panggil alat `buat_janji_temu_baru` dengan informasi yang telah diformat ulang.\n
-        12. Ubah nama hari ke bahasa yang sesuai:\n
+        11. PENTING: Pastikan nama dokter yang digunakan hanyalah NAMA BELAKANG saja. \n
+            - Contoh: Nama Lengkap:'dr. Irina Syaefulloh, Sp.PD' menjadi Nama Belakang: 'Syaefulloh'. \n
+        12. Panggil alat `buat_janji_temu_baru` dengan informasi yang telah diformat ulang.\n
+        13. Ubah nama hari ke bahasa yang sesuai:\n
            - Contoh: 'Saturday' → 'Sabtu', 'Monday' → 'Senin', dst.\n
-        13. Jika alat berhasil, sampaikan konfirmasi keberhasilan dengan format berikut:\n
+        14. Jika alat berhasil, sampaikan konfirmasi keberhasilan dengan format berikut:\n
         \n
            - Berikan respon seperti contoh di bawah ini:\n
                'Halo **nama_pasien**, **MRN: mrn**.\n
