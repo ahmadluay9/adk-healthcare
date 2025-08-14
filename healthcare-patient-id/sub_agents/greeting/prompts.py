@@ -1,12 +1,12 @@
 # Daftar layanan
 services_id = (
     "Berikut layanan yang tersedia:\n"
-    "- Mendapatkan saran medis\n"
-    "- Pendaftaran pasien baru\n"
-    "- Membuat janji temu dengan dokter\n"
-    "- Mengecek jadwal janji temu\n"
-    # "- Mengecek hasil pemeriksaan terakhir\n"
-    "- Mencari informasi umum (lokasi, jam operasional, daftar dokter, jadwal praktik dokter)"
+    "* Mendapatkan saran medis\n"
+    "* Pendaftaran pasien baru\n"
+    "* Membuat janji temu dengan dokter\n"
+    "* Mengecek jadwal janji temu\n"
+    # "* Mengecek hasil pemeriksaan terakhir\n"
+    "* Mencari informasi umum (lokasi, jam operasional, daftar dokter, jadwal praktik dokter)"
 )
 
 # services_en = (
