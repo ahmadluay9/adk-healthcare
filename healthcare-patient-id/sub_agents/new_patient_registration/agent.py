@@ -7,12 +7,13 @@ new_patient_registration_agent = LlmAgent(
     name="RegistrationAgent",
     model=model_name,
     description="Agen untuk memandu pengguna melalui proses pendaftaran pasien baru.",
-instruction = registration_instruction,
+    instruction = registration_instruction,
     tools=[
             registrasi_pasien_baru,
             dapatkan_waktu_sekarang
            ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
-    )
+    ),
+    output_key="registration_result"
 )

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # from .sub_agents.patient_status_confirmation.agent import patient_status_confirmation_agent
 # from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
 from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
-from .sub_agents.patient_verification.agent import verification_agent
+# from .sub_agents.patient_verification.agent import verification_agent
 # from .sub_agents.existing_patient_service.agent import existing_patient_service_workflow
 # from .sub_agents.ask_fullname_dob.agent import ask_fullname_dob_agent
 # from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
@@ -20,8 +20,8 @@ from .sub_agents.patient_verification.agent import verification_agent
 # from .sub_agents.create_appointment.agent import doctor_search_tool
 from .sub_agents.general_search.agent import general_search_tool
 from .sub_agents.medical_advice.agent import medical_advice_agent
-from .sub_agents.check_upcoming_appointments.agent import check_appointment_agent
-from .sub_agents.create_appointment.agent import create_appointment_agent
+from .sub_agents.check_upcoming_appointments.agent import check_appointment_root_agent
+from .sub_agents.create_appointment.agent import create_appointment_root_agent
 # from .sub_agents.check_insurance_benefits.agent import check_benefits_agent
 # from .sub_agents.check_claim_status.agent import check_claim_agent
 # from .sub_agents.check_diagnosis.agent import check_diagnosis_agent
@@ -50,7 +50,7 @@ root_agent = Agent(
         # patient_status_confirmation_agent,
         # patient_status_workflow,
         # ask_fullname_dob_agent,
-        verification_agent,
+        # verification_agent,
         # existing_patient_service_workflow,
         # new_patient_verification_workflow,
         # new_patient_verification_workflow,
@@ -58,9 +58,9 @@ root_agent = Agent(
         # registration_confirmation_agent,
         # search_agent,
         # hospital_doctor_search_agent,
-        # medical_advice_agent,
-        # check_appointment_agent,
-        # create_appointment_agent,
+        medical_advice_agent,
+        check_appointment_root_agent,
+        create_appointment_root_agent,
         # check_benefits_agent,
         # check_claim_agent,
         # check_diagnosis_agent,
