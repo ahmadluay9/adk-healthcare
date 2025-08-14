@@ -1,12 +1,12 @@
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.genai import types
-from ...tools import dapatkan_data_pasien_dari_email, dapatkan_waktu_sekarang, model_name, model_lite
+from ...tools import dapatkan_data_pasien_dari_email, dapatkan_waktu_sekarang, dapatkan_tanggal_hari_ini, model_name, model_lite, model_pro
 from ..patient_verification.prompts import instruction_greeting, instruction_greeting_v1, verification_agent_instruction_v1
 from ..general_search.agent import general_search_tool
 from ..medical_advice.agent import medical_advice_agent
 from ..check_upcoming_appointments.agent import check_appointment_agent
 from ..create_appointment.agent import create_appointment_agent
-from ..new_patient_registration.agent import new_patient_registration_agent
+# from ..new_patient_registration.agent import new_patient_registration_agent
 
 # verify_patient_identity_agent = LlmAgent(
 #     name="VerifyPatientIdentityAgent",
@@ -109,15 +109,16 @@ patient_verification_workflow = SequentialAgent(
 
 verification_agent = LlmAgent(
     name="VerificationAgent",
-    model="gemini-2.5-pro",
+    model=model_pro,
     instruction=verification_agent_instruction_v1,
     description="Agen untuk verifikasi identitas pasien.",
     tools=[
         dapatkan_waktu_sekarang,
+        dapatkan_tanggal_hari_ini,
         general_search_tool
         ],
     sub_agents=[
-        new_patient_registration_agent,
+        # new_patient_registration_agent,
         patient_verification_workflow,
         medical_advice_agent,
         create_appointment_agent,

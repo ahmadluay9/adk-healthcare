@@ -10,13 +10,14 @@ from dotenv import load_dotenv
 # from .sub_agents.ask_patient_status.agent import ask_patient_status_agent
 # from .sub_agents.patient_status_confirmation.agent import patient_status_confirmation_agent
 # from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
-# from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
+from .sub_agents.new_patient_registration.agent import new_patient_registration_agent
 from .sub_agents.patient_verification.agent import verification_agent
 # from .sub_agents.existing_patient_service.agent import existing_patient_service_workflow
 # from .sub_agents.ask_fullname_dob.agent import ask_fullname_dob_agent
-from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
+# from .sub_agents.new_patient_verification.agent import new_patient_verification_workflow
 # from .sub_agents.registration_confirmation.agent import registration_confirmation_agent
 # from .sub_agents.general_search.agent import search_agent
+# from .sub_agents.create_appointment.agent import doctor_search_tool
 from .sub_agents.general_search.agent import general_search_tool
 from .sub_agents.medical_advice.agent import medical_advice_agent
 from .sub_agents.check_upcoming_appointments.agent import check_appointment_agent
@@ -26,7 +27,7 @@ from .sub_agents.create_appointment.agent import create_appointment_agent
 # from .sub_agents.check_diagnosis.agent import check_diagnosis_agent
 # from .sub_agents.bpjs_check.agent import bpjs_check_agent
 
-from .tools import model_name, dapatkan_waktu_sekarang
+from .tools import model_name, model_pro, model_lite, dapatkan_waktu_sekarang, dapatkan_tanggal_hari_ini
 from .prompts import promp_instruction, promp_instruction_v1, promp_instruction_v2, promp_instruction_v4, promp_instruction_v4
 
 # --- Konfigurasi Lingkungan ---
@@ -38,7 +39,7 @@ os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = os.getenv('GOOGLE_GENAI_USE_VERTEXAI')
 # --- Definisi Agen Utama (Router Agent) ---
 root_agent = Agent(
     name="root_agent",
-    model= model_name,
+    model= model_pro,
     description="Agen utama yang berfungsi sebagai router untuk mendelegasikan tugas ke sub-agen yang sesuai.",
     instruction = promp_instruction_v4,
     sub_agents=[
@@ -53,7 +54,7 @@ root_agent = Agent(
         # existing_patient_service_workflow,
         # new_patient_verification_workflow,
         # new_patient_verification_workflow,
-        # new_patient_registration_agent,
+        new_patient_registration_agent,
         # registration_confirmation_agent,
         # search_agent,
         # hospital_doctor_search_agent,
@@ -67,6 +68,7 @@ root_agent = Agent(
     ],
     tools=[
         general_search_tool,
-        dapatkan_waktu_sekarang
+        dapatkan_waktu_sekarang,
+        dapatkan_tanggal_hari_ini
         ]
 )

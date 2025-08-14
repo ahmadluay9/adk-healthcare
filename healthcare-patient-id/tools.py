@@ -12,6 +12,7 @@ import re
 load_dotenv()
 model_name = os.getenv("MODEL")
 model_lite = os.getenv("MODEL_LITE")
+model_pro = os.getenv("MODEL_PRO")
 PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT')
 FHIR_LOCATION = os.getenv('FHIR_LOCATION')
 FHIR_DATASET_ID = os.getenv('FHIR_DATASET_ID')

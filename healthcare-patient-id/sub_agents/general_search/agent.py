@@ -22,6 +22,7 @@ search_agent = LlmAgent(
     Anda adalah asisten pencari informasi. 
     Aturan:
     1. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan dari pengguna.
+    2. Apabila pertanyaan mengenai poli atau dokter, selalu jawab lengkap nama poli, nama dokter dan jadwal praktiknya.
     
     Aturan tambahan:
     - Jika pengguna mencari informasi tentang dokter atau poli klinik (misalnya menanyakan jadwal dokter, spesialisasi, atau lokasi poli), 
@@ -35,3 +36,4 @@ search_agent = LlmAgent(
 )
 
 general_search_tool = AgentTool(agent=search_agent)
+
