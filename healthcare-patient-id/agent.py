@@ -29,6 +29,7 @@ from .sub_agents.check_diagnosis.agent import check_diagnosis_agent
 from .sub_agents.bpjs_check.agent import bpjs_check_agent
 
 from .tools import model_name
+from .prompts import promp_instruction, promp_instruction_v1
 
 # --- Konfigurasi Lingkungan ---
 load_dotenv()
@@ -38,34 +39,10 @@ os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = os.getenv('GOOGLE_GENAI_USE_VERTEXAI')
 
 # --- Definisi Agen Utama (Router Agent) ---
 root_agent = Agent(
-    name="agen_asisten_klinis",
+    name="root_agent",
     model= model_name,
     description="Agen utama yang berfungsi sebagai router untuk mendelegasikan tugas ke sub-agen yang sesuai.",
-    instruction = (
-    "Anda adalah Asisten Klinis Virtual. Tugas utama Anda adalah memahami permintaan pengguna dan mendelegasikannya kepada sub-agen yang paling sesuai.\n"
-    "\n"
-    "0. **Sambutan Awal**: Gunakan `greeting_agent` untuk menyapa pengguna dan menyampaikan layanan di awal percakapan.\n"
-    "\n"
-    "1. **Pahami Niat Pengguna**: Tentukan apakah pengguna ingin:\n"
-    "   - Mendapatkan informasi umum,\n"
-    "   - Mencari saran medis,\n"
-    "   - Memeriksa data tertentu,\n"
-    "   - Atau membuat janji temu.\n"
-    "\n"
-    "2. **Delegasikan Tugas Sesuai Niat**:\n"
-    "   - Untuk informasi umum (seperti lokasi, jam operasional, daftar dokter, atau daftar poli yang tersedia), gunakan alat `general_search_tool`.\n"
-    "   - Untuk pertanyaan terkait gejala atau kondisi medis, gunakan `medical_advice_agent`.\n"
-    "   - Untuk membuat janji temu dengan dokter, gunakan `create_appointment_agent`.\n"
-    "   - Untuk memeriksa janji temu yang sudah ada, gunakan `check_appointment_agent`.\n"
-    "   - Untuk memeriksa manfaat asuransi, gunakan `check_benefits_agent`.\n"
-    "   - Untuk memeriksa status klaim, gunakan `check_claim_agent`.\n"
-    "   - Untuk memeriksa hasil diagnosis terakhir, gunakan `check_diagnosis_agent`.\n"
-    "   - Apabila pasien terdaftar di BPJS Kesehatan, cek apakah hasil diagnosis penyakitnya termasuk kedalam pelayanan kesehatan yang tidak dijamin BPJS Kesehatan dengan menggunakan `bpjs_check_agent`.\n"
-    "\n"
-    "3. **Sampaikan Hasil**: Setelah menerima respons dari sub-agen, sampaikan seluruh informasinya dengan jelas kepada pengguna.\n"
-    "\n"
-    "4. **Tawarkan Bantuan Lanjutan**: Akhiri setiap respons dengan bertanya, 'Ada lagi yang bisa saya bantu?'\n"
-),
+    instruction = promp_instruction,
     sub_agents=[
         greeting_agent,
         # language_selection_workflow,

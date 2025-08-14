@@ -129,12 +129,22 @@ def make_fhir_request(method: str, resource_path: str, payload: dict = None):
         return None
 
 # Function to verify patient identity using MRN or name and birthdate
-def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None):
+def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None, email: Optional[str] = None):
     """Memverifikasi identitas pasien menggunakan MRN (prioritas) atau kombinasi nama belakang dan tanggal lahir."""
     
     print("\n--- DEBUG: Memulai verifikasi_pasien ---")
     print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}', mrn='{mrn}'")
-
+    
+    if email:
+        print(f"DEBUG: Melakukan verifikasi menggunakan Email: {email}")
+        query_path = f"Patient?email={quote(email)}"
+        patient_bundle = make_fhir_request('GET', query_path)
+        if not patient_bundle or patient_bundle.get("total", 0) == 0:
+            return None, {"status": "error", "error_message": f"Pasien dengan email '{email}' tidak ditemukan."}
+        if patient_bundle.get("total", 0) > 1:
+            return None, {"status": "error", "error_message": "Ditemukan lebih dari satu pasien dengan email tersebut. Mohon gunakan metode verifikasi lain."}
+        return patient_bundle["entry"][0]["resource"], None
+    
     if mrn and tanggal_lahir:
         print("DEBUG: Melakukan verifikasi menggunakan MRN dan Tanggal Lahir.")
         query_path = f"Patient?identifier={mrn}&birthdate={tanggal_lahir}"
@@ -166,30 +176,48 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
         print("DEBUG: Gagal verifikasi karena informasi tidak lengkap.")
         return None, {"status": "error", "error_message": "Informasi tidak lengkap. Mohon berikan data verifikasi yang diperlukan."}
 
-def dapatkan_mrn_pasien(nama_depan: str, nama_belakang: str, tanggal_lahir: str) -> dict:
-    """Mendapatkan Nomor Rekam Medis (MRN) pasien berdasarkan nama dan tanggal lahir."""
+def dapatkan_data_pasien_dari_email(email: str) -> dict:
+    """Mendapatkan detail data pasien (nama, tanggal lahir, MRN) berdasarkan alamat email."""
     
-    print("\n--- DEBUG: Memulai dapatkan_mrn_pasien ---")
-    print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}'")
+    print(f"\n--- DEBUG: Memulai dapatkan_data_pasien_dari_email ---")
+    print(f"Input: email='{email}'")
 
-    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir)
+    patient_resource, error = verifikasi_pasien(email=email)
     
     if error:
-        print(f"DEBUG: Verifikasi gagal: {error}")
+        print(f"DEBUG: Verifikasi via email gagal: {error}")
         return error
 
     if patient_resource:
-        print("DEBUG: Pasien ditemukan.")
-        mrn_value = "tidak ditemukan"
+        print("DEBUG: Pasien ditemukan via email.")
+        # Ekstrak data yang diperlukan
+        nama_depan = patient_resource.get("name", [{}])[0].get("given", ["(tidak ada)"])[0]
+        nama_belakang = patient_resource.get("name", [{}])[0].get("family", "(tidak ada)")
+        tanggal_lahir = patient_resource.get("birthDate", "(tidak ada)")
+        
+        mrn_value = "(tidak ada)"
         if "identifier" in patient_resource:
             for identifier in patient_resource["identifier"]:
                 if identifier.get("type", {}).get("text") == "MRN":
-                    mrn_value = identifier.get("value", "tidak ditemukan")
+                    mrn_value = identifier.get("value", "(tidak ada)")
                     break
         
-        report = f"Nomor Rekam Medis (MRN) untuk pasien {nama_depan} {nama_belakang} adalah: {mrn_value}"
+        report = (
+            f"Data untuk pasien dengan email {email} berhasil ditemukan:\n"
+            f"- Nama Depan: {nama_depan}\n"
+            f"- Nama Belakang: {nama_belakang}\n"
+            f"- Tanggal Lahir: {tanggal_lahir}\n"
+            f"- MRN: {mrn_value}"
+        )
         print(f"DEBUG: Laporan akhir: {report}")
-        return {"status": "success", "mrn": mrn_value, "report": report}
+        return {
+            "status": "success",
+            "nama_depan": nama_depan,
+            "nama_belakang": nama_belakang,
+            "tanggal_lahir": tanggal_lahir,
+            "mrn": mrn_value,
+            "report": report
+        }
     
     return {"status": "error", "error_message": "Gagal memproses permintaan."}
    
@@ -327,8 +355,8 @@ def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional
         if resource.get("resourceType") == "Appointment": appointment = resource
         elif resource.get("resourceType") == "Patient": patient = resource
         elif resource.get("resourceType") == "Practitioner": practitioner = resource
-    if not appointment: return {"status": "error", "error_message": "Gagal menemukan detail janji temu."}
-    
+    if not appointment: return {"status": "error", "error_message": "Gagal menemukan detail janji temu. Pastikan data pasien sudah benar."}
+
     patient_name = patient['name'][0]['given'][0] if patient and 'name' in patient else 'Pasien'
     
     doctor_name = "Dokter"

@@ -62,8 +62,8 @@
                     </div>
                     <div class="flex items-center gap-2">
                          <button id="new-session-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors" title="New Session">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                        </button>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                         </button>
                         <button class="text-gray-400 hover:text-gray-600 p-2 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                         </button>
@@ -91,27 +91,37 @@
 
             <!-- Side Panel -->
             <div class="flex flex-col gap-8">
-                <!-- Patient Details Card -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 h-fit">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Detail Pasien</h2>
-                    <div id="patient-card-unverified" class="text-center py-8">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <p class="mt-4 text-gray-500">Verifikasi dibutuhkan untuk melihat detail pasien.</p>
-                    </div>
-                    <div id="patient-card-verified" class="hidden space-y-4">
-                        <div class="flex items-center gap-4">
-                            <img id="patient-avatar" src="https://placehold.co/64x64/f97316/ffffff?text=PV" alt="Patient Avatar" class="w-16 h-16 rounded-full">
-                            <div>
-                                <p class="font-bold text-lg text-gray-900" id="patient-name"></p>
-                                <p class="text-sm text-gray-500" id="patient-mrn"></p>
-                            </div>
+                <!-- Session State Card -->
+                <div class="bg-white rounded-2xl shadow-xl p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Session State</h2>
+                    <div class="space-y-3 text-sm font-mono text-gray-600 break-all">
+                        <div>
+                            <p class="font-semibold text-gray-800">App Name:</p>
+                            <p id="info-app-name" class="bg-gray-100 p-2 rounded-md"></p>
                         </div>
-                        <div class="border-t border-gray-200 pt-4">
-                            <p class="text-sm font-medium text-gray-500">Tanggal Lahir</p>
-                            <p class="font-semibold text-gray-800" id="patient-dob"></p>
+                        <div>
+                            <p class="font-semibold text-gray-800">User ID:</p>
+                            <p id="info-user-id" class="bg-gray-100 p-2 rounded-md"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Session ID:</p>
+                            <p id="info-session-id" class="bg-gray-100 p-2 rounded-md"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Last Update:</p>
+                            <p id="info-last-update" class="bg-gray-100 p-2 rounded-md"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Response Count:</p>
+                            <p id="info-response-count" class="bg-gray-100 p-2 rounded-md"></p>
+                        </div>
+                         <div>
+                            <p class="font-semibold text-gray-800">State Object:</p>
+                            <pre id="info-state" class="bg-gray-100 p-2 rounded-md text-xs overflow-x-auto custom-scrollbar"></pre>
                         </div>
                     </div>
                 </div>
+
                 <!-- JSON Response Viewer -->
                 <div class="bg-white rounded-2xl shadow-xl p-6 flex-1 flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-4">
@@ -180,16 +190,16 @@
         const newSessionBtn = document.getElementById('new-session-btn');
         const statusIndicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
-        const patientCardUnverified = document.getElementById('patient-card-unverified');
-        const patientCardVerified = document.getElementById('patient-card-verified');
-        const patientNameEl = document.getElementById('patient-name');
-        const patientMrnEl = document.getElementById('patient-mrn');
-        const patientDobEl = document.getElementById('patient-dob');
-        const patientAvatarEl = document.getElementById('patient-avatar');
         const jsonOutputArea = document.getElementById('json-output-area');
         const prevJsonBtn = document.getElementById('prev-json-btn');
         const nextJsonBtn = document.getElementById('next-json-btn');
         const jsonCounter = document.getElementById('json-counter');
+        const infoUserId = document.getElementById('info-user-id');
+        const infoSessionId = document.getElementById('info-session-id');
+        const infoResponseCount = document.getElementById('info-response-count');
+        const infoAppName = document.getElementById('info-app-name');
+        const infoState = document.getElementById('info-state');
+        const infoLastUpdate = document.getElementById('info-last-update');
         
         // --- Speech Recognition Setup ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -322,30 +332,22 @@
             chatContainer.appendChild(bubble);
             scrollToBottom();
         }
-
-        const resetPatientCard = () => {
-            patientCardVerified.classList.add('hidden');
-            patientCardUnverified.classList.remove('hidden');
-            patientNameEl.textContent = '';
-            patientMrnEl.textContent = '';
-            patientDobEl.textContent = '';
-            patientAvatarEl.src = 'https://placehold.co/64x64/f97316/ffffff?text=PV';
-        };
-
-        const showVerifiedPatientCard = (patientData) => {
-            const { name, mrn, dob, initials } = patientData;
-            patientNameEl.textContent = name;
-            patientMrnEl.textContent = mrn ? `MRN: ${mrn}` : '';
-            if (dob) {
-                const date = new Date(dob);
-                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                patientDobEl.textContent = date.toLocaleDateString('id-ID', options);
-            }
-            patientAvatarEl.src = `https://placehold.co/64x64/f97316/ffffff?text=${initials}`;
+        
+        const updateSessionInfo = (sessionData = {}) => {
+            infoUserId.textContent = sessionData.userId || USER_ID;
+            infoSessionId.textContent = sessionData.id || SESSION_ID;
+            infoAppName.textContent = sessionData.appName || APP_NAME;
+            infoState.textContent = JSON.stringify(sessionData.state || {}, null, 2);
             
-            patientCardUnverified.classList.add('hidden');
-            patientCardVerified.classList.remove('hidden');
+            const timestamp = sessionData.lastUpdateTime;
+            if (timestamp) {
+                const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+                infoLastUpdate.textContent = date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'long'});
+            } else {
+                infoLastUpdate.textContent = 'N/A';
+            }
+            
+            infoResponseCount.textContent = allResponses.length;
         };
 
         const setUIState = (enabled, message = '') => {
@@ -391,22 +393,6 @@
             else if (data.actions?.transferToAgent) {
                 addSystemEvent(`Transferring to <b>${data.actions.transferToAgent}</b>`);
             }
-            else if (part.functionResponse && part.functionResponse.name === 'verifikasi_pasien') {
-                const result = part.functionResponse.response?.result?.[0];
-                if (result) {
-                    const patientName = `${result.name[0].given.join(' ')} ${result.name[0].family}`;
-                    const patientMrn = result.identifier?.find(id => id.type?.coding?.[0]?.code === 'MR')?.value;
-                    const patientDob = result.birthDate;
-                    const patientInitials = `${result.name[0].given[0][0]}${result.name[0].family[0]}`;
-
-                    showVerifiedPatientCard({
-                        name: patientName,
-                        mrn: patientMrn,
-                        dob: patientDob,
-                        initials: patientInitials
-                    });
-                }
-            }
         };
 
         const sendMessageToBackend = async (messageText) => {
@@ -435,18 +421,19 @@
                 
                 for (const line of eventLines) {
                      try {
-                        const jsonStr = line.substring(5);
-                        const data = JSON.parse(jsonStr);
-                        allResponses.push(data);
-                        processSseEvent(data);
-                    } catch (e) {
-                        console.error('Error parsing event line:', e, line);
-                    }
+                         const jsonStr = line.substring(5);
+                         const data = JSON.parse(jsonStr);
+                         allResponses.push(data);
+                         processSseEvent(data);
+                     } catch (e) {
+                         console.error('Error parsing event line:', e, line);
+                     }
                 }
                 
                 if (eventLines.length > 0) {
                     currentResponseIndex = allResponses.length - 1;
                     updateJsonNav();
+                    infoResponseCount.textContent = allResponses.length;
                 }
 
             } catch (error) {
@@ -469,11 +456,12 @@
 
         const initializeSession = async () => {
             chatContainer.innerHTML = '';
-            resetPatientCard();
             allResponses = [];
             currentResponseIndex = -1;
             SESSION_ID = `session_${Date.now()}`;
+            USER_ID = `user_${Date.now()}`;
             updateJsonNav();
+            updateSessionInfo();
             setUIState(false, 'Connecting to session...');
             try {
                 const response = await fetch(`${API_URL}/apps/${APP_NAME}/users/${USER_ID}/sessions/${SESSION_ID}`, {
@@ -485,6 +473,7 @@
                 allResponses.push(sessionData);
                 currentResponseIndex = 0;
                 updateJsonNav();
+                updateSessionInfo(sessionData);
 
                 statusIndicator.classList.remove('bg-gray-400', 'bg-red-500');
                 statusIndicator.classList.add('bg-green-500');
@@ -501,12 +490,6 @@
                 statusIndicator.classList.add('bg-red-500');
                 addMessage('Could not connect to the clinical assistant. Please refresh the page to try again.', 'System');
             }
-        };
-
-        const resetSession = () => {
-            USER_ID = `user_${Date.now()}`;
-            SESSION_ID = `session_${Date.now()}`;
-            initializeSession();
         };
 
         // --- Event Listeners ---

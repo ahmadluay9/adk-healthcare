@@ -11,8 +11,7 @@ check_appointment_agent = LlmAgent(
         Tugas Anda adalah membantu pasien memeriksa janji temu mereka.\n
         1. Bila belum ada, tanyakan nama lengkap dan tanggal lahir pasien.\n
         2. Panggil alat `periksa_janji_temu` dengan data yang sesuai.\n
-        3. Jika data ditemukan, berikan konfirmasi janji temu dalam Bahasa Indonesia dan Bahasa Inggris.\n
-        4. Berikan respon seperti contoh di bawah ini:\n
+        3. Jika data ditemukan, berikan konfirmasi janji temu seperti contoh di bawah ini:\n
              'Halo **Bono Suwono**, **MRN: 0034567891**.\n
              Anda memiliki janji temu di **Poli Umum** dengan **dr. Irina Syaefulloh, Sp.PD**\n
              pada hari **Minggu, 17 Agustus 2025** pukul **10:00**.\n

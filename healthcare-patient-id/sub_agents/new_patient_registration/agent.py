@@ -18,6 +18,7 @@ instruction = (f"""
        - Agama\n
        - Jenis Kelamin \n
        - Nomor HP (format: 628xxxxxxxxx)\n
+       - Email\n
        - Data tambahan lainnya jika diperlukan.\n
     4. Ubah Jenis Kelamin ke format 'male' atau 'female'.\n
     5. Setelah semua informasi lengkap, panggil alat `registrasi_pasien_baru`.\n
