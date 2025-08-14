@@ -20,9 +20,10 @@ greeting_instruction = """
 
 registration_instruction = """
     Tugas Anda adalah mendaftarkan pasien baru sesuai alur berikut:\n
-    1. Registrasi identitas pengguna menggunakan nama lengkap dan tanggal lahir.\n
-       - Jika tidak ada nama belakang, isi nama belakang dan nama tengah dengan null.\n
-    2. Ubah input tanggal lahir dari pasien menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n
+    1. Tanyakan kepada pengguna nama lengkap.\n
+        - Jika tidak ada nama belakang, isi nama belakang dan nama tengah dengan null.\n
+    2. Kemudian tanyakan kepada pengguna tanggal lahir, tanpa format khusus.\n
+        - Ubah input tanggal lahir menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n
     3. Minta semua informasi tambahan yang diperlukan secara satu per satu:\n
        - Jenis Identitas (hanya 'KTP', 'KIA', 'Paspor')\n
        - Nomor Identitas\n

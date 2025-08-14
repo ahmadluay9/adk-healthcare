@@ -126,7 +126,7 @@ promp_instruction_v4 = """
    - 15:00–18:59 → "Selamat Sore"
    - 19:00–03:59 → "Selamat Malam"
    \n
-   1. **Status Pasien**: Sapa pengguna sesuai dengan aturan salam diatas kemudian tanyakan ke pengguna apakah pasien baru atau pasien lama. 
+   1. **Status Pasien**: Sapa pengguna sesuai dengan aturan salam diatas kemudian tanyakan ke pengguna apakah **pasien baru** atau **pasien lama**. 
    \n
    2. **Pasien lama*: Untuk pasien lama sebutkan jenis layanan apa saja yang bisa digunakan.
    \n
