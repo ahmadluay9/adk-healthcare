@@ -15,7 +15,7 @@ vertexai_search_tool = VertexAiSearchTool(
 
 # --- Definisi Sub-Agen ---
 general_search_agent = LlmAgent(
-    model= model_name,
+    model= model_pro,
     name='GeneralSearchAgent',
     description="Agen untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar poli atau dokter yang tersedia.",
     instruction="""

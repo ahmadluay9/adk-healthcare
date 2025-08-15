@@ -2,7 +2,7 @@ import os
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.genai import types
 from dotenv import load_dotenv
-from ...tools import model_name
+from ...tools import model_name, model_pro
 from ..general_search.agent import general_search_tool
 
 load_dotenv()
@@ -10,7 +10,7 @@ load_dotenv()
 # Search Agent 1: Google Search for General Medical Information
 medical_advice_agent = LlmAgent(
     name="MedicalAdviceAgent",
-    model=model_name,
+    model=model_pro,
     instruction="""
     Tugas Anda adalah memberikan saran medis umum untuk keluhan non-darurat.
     

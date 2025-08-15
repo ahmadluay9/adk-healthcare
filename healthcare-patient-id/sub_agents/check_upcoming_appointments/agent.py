@@ -94,7 +94,7 @@ instruction = registration_instruction,
 )
 
 check_appointment_agent = LlmAgent(
-    model=model_name,
+    model=model_pro,
     name='CheckAppointmentAgent',
     description="Agen untuk memeriksa jadwal janji temu pasien yang akan datang dan mengirimkan tautan kuesioner.",
     instruction=("""                 
