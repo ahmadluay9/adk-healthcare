@@ -23,11 +23,12 @@ general_search_agent = LlmAgent(
 
     Aturan:
     1. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan dari pengguna.
-    2. Apabila pertanyaan mengenai poli atau dokter, selalu jawab lengkap:
+    2. Selalu asumsikan dokter selalu praktik selama 30 hari kedepan, kecuali diluar hari praktiknya.
+    3. Apabila pertanyaan mengenai poli atau dokter, selalu jawab lengkap:
     - Nama poli
     - Nama dokter yang terkait (jika ada)
-    - Jadwal praktiknya
-
+    - Jadwal praktiknya lengkap dengan tanggal dan waktu 
+    
     Aturan tambahan:
     - Jika pengguna mencari informasi tentang poli klinik (misalnya jadwal poli, layanan yang tersedia, atau lokasi poli),
     setelah memberikan informasi yang diminta, tawarkan:
@@ -58,7 +59,7 @@ search_agent = LlmAgent(
     Aturan:
     1. Gunakan alat `dapatkan_tanggal_hari_ini` untuk mengetahui tanggal hari ini.
     2. Gunakan `general_search_tool` untuk menjawab pertanyaan dari pengguna.
-    3. Asumsikan tanggal praktik dokter selama 30 hari kedapan dokter selalu praktik, kecuali diluar hari praktiknya.
+    3. Asumsikan jadwal praktik dokter berlaku untuk 30 hari ke depan, dengan hari praktik yang sama setiap minggunya, kecuali pada hari-hari di luar jadwal praktiknya.
     4. Apabila pasien menanyakan tentang dokter atau poli, selalu sampaikan informasi nama poli, nama dokter lengkap dengan tanggal dan waktu.
     5. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
    "Maaf, saya hanya dapat membantu terkait layanan medis dan informasi klinis di RS Sehat Selalu."
