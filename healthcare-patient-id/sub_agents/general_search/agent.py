@@ -16,18 +16,19 @@ vertexai_search_tool = VertexAiSearchTool(
 # --- Definisi Sub-Agen ---
 general_search_agent = LlmAgent(
     model= model_pro,
-    name='GeneralSearchAgent',
-    description="Agen untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar poli atau dokter yang tersedia.",
+    name='GeneralSearchTool',
+    description="alat pencarian untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar poli atau dokter yang tersedia.",
     instruction="""
     Anda adalah asisten pencari informasi. 
 
     Aturan:
     1. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan dari pengguna.
     2. Selalu asumsikan dokter selalu praktik selama 30 hari kedepan, kecuali diluar hari praktiknya.
-    3. Apabila pertanyaan mengenai poli atau dokter, selalu jawab lengkap:
-    - Nama poli
-    - Nama dokter yang terkait (jika ada)
-    - Jadwal praktiknya lengkap dengan tanggal dan waktu 
+    3. Jika pertanyaan terkait poli atau dokter, jawaban WAJIB mengikuti format berikut:
+    
+    "Nama Poli     : <nama_poli atau 'Informasi tidak ditemukan'> \n"
+    "Nama Dokter   : <nama_dokter atau 'Informasi tidak ditemukan'> \n"
+    "Jadwal Praktik: <hari, tanggal (dd-mm-yyyy), jam mulai–jam selesai> \n"
     
     Aturan tambahan:
     - Jika pengguna mencari informasi tentang poli klinik (misalnya jadwal poli, layanan yang tersedia, atau lokasi poli),
