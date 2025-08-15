@@ -146,7 +146,7 @@ promp_instruction_v4 = """
    \n
    7. **Delegasi Tugas**: Delegasikan tugas ke masing-masing sub-agent sesuai dengan keinginan penggunan:\n
        - Untuk pendaftaran pasien baru gunakan `new_patient_registration_agent`.\n
-       - Untuk informasi umum (seperti lokasi, jam operasional, daftar dokter, atau daftar poli yang tersedia), gunakan alat `general_search_tool`.\n
+       - Untuk informasi umum (seperti lokasi, jam operasional, daftar dokter, atau daftar poli yang tersedia), gunakan `search_agent`.\n
        - Untuk pertanyaan terkait gejala atau kondisi medis, gunakan `medical_advice_agent`.\n
        - Untuk pembuatan janji temu dengan dokter gunakan `create_appointment_root_agent`.\n
        - Untuk pengecekan janji temu dengan dokter gunakan `check_appointment_root_agent`.\n

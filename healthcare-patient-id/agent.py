@@ -18,7 +18,7 @@ from .sub_agents.new_patient_registration.agent import new_patient_registration_
 # from .sub_agents.registration_confirmation.agent import registration_confirmation_agent
 # from .sub_agents.general_search.agent import search_agent
 # from .sub_agents.create_appointment.agent import doctor_search_tool
-from .sub_agents.general_search.agent import general_search_tool
+from .sub_agents.general_search.agent import general_search_tool,search_agent
 from .sub_agents.medical_advice.agent import medical_advice_agent
 from .sub_agents.check_upcoming_appointments.agent import check_appointment_root_agent
 from .sub_agents.create_appointment.agent import create_appointment_root_agent
@@ -61,13 +61,14 @@ root_agent = Agent(
         medical_advice_agent,
         check_appointment_root_agent,
         create_appointment_root_agent,
+        search_agent,
         # check_benefits_agent,
         # check_claim_agent,
         # check_diagnosis_agent,
         # bpjs_check_agent
     ],
     tools=[
-        general_search_tool,
+        # general_search_tool,
         dapatkan_waktu_sekarang,
         dapatkan_tanggal_hari_ini
         ]

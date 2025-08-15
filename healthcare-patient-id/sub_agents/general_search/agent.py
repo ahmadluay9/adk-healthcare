@@ -4,7 +4,7 @@ from google.adk.tools import VertexAiSearchTool
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from dotenv import load_dotenv
-from ...tools import model_name
+from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini
 
 load_dotenv()
 
@@ -14,7 +14,7 @@ vertexai_search_tool = VertexAiSearchTool(
 )
 
 # --- Definisi Sub-Agen ---
-search_agent = LlmAgent(
+general_search_agent = LlmAgent(
     model= model_name,
     name='GeneralSearchAgent',
     description="Agen untuk menjawab pertanyaan umum tentang rumah sakit seperti jam buka, lokasi, atau daftar poli atau dokter yang tersedia.",
@@ -38,11 +38,36 @@ search_agent = LlmAgent(
     "Apakah Anda ingin saya membantu membuatkan janji temu dengan dokter atau poli tersebut, 
     atau Anda sudah memiliki janji dengan beliau dan ingin saya bantu memeriksanya?"
     """,
-    tools=[vertexai_search_tool],
+    tools=[
+        vertexai_search_tool
+        ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
     ),
 )
 
-general_search_tool = AgentTool(agent=search_agent)
+general_search_tool = AgentTool(agent=general_search_agent)
 
+search_agent = LlmAgent(
+    model = model_pro,
+    name='SearchAgent',
+    description="Agen untuk menjawab pertanyaan umum.",
+    instruction="""
+    Anda adalah asisten pencari informasi. 
+
+    Aturan:
+    1. Gunakan alat `dapatkan_tanggal_hari_ini` untuk mengetahui tanggal hari ini.
+    2. Gunakan `general_search_tool` untuk menjawab pertanyaan dari pengguna.
+    3. Asumsikan tanggal praktik dokter selama 30 hari kedapan dokter selalu praktik, kecuali diluar hari praktiknya.
+    4. Apabila pasien menanyakan tentang dokter atau poli, selalu sampaikan informasi nama poli, nama dokter lengkap dengan tanggal dan waktu.
+    5. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
+   "Maaf, saya hanya dapat membantu terkait layanan medis dan informasi klinis di RS Sehat Selalu."
+    """,
+    tools=[
+        general_search_tool,
+        dapatkan_tanggal_hari_ini
+        ],
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.1
+    ),
+)
