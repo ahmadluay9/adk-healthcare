@@ -120,7 +120,7 @@ check_appointment_root_agent = LlmAgent(
     name='CheckAppointmentRootAgent',
     description="Agen utama untuk proses verifikasi dan memeriksa jadwal janji temu pasien yang akan datang.",
     instruction=("""
-    1. Apabila belum ada,tanyakan email atau nomor telepon pengguna.\n
+    1. Selalu tanyakan email atau nomor telepon pengguna.\n
     2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `patient_verification_workflow`.\n
     3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
