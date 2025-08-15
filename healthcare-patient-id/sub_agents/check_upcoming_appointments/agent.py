@@ -4,8 +4,8 @@ from ...tools import periksa_janji_temu, model_name, model_pro, model_lite, dapa
 from ..new_patient_registration.prompts import registration_instruction
 from ..create_appointment.prompts import greeting_instruction
 
-verify_patient_identity_agent = LlmAgent(
-    name="VerifyPatientIdentityAgent",
+check_appointment_verify_patient_identity_agent = LlmAgent(
+    name="CheckAppointmentVerifyPatientIdentityAgent",
     model=model_lite,
     description="Agen yang bertugas menyampaikan pesan sebelum proses verifikasi identitas pasien.",
     instruction=("""
@@ -18,8 +18,8 @@ verify_patient_identity_agent = LlmAgent(
     )
 )
 
-verification_status_agent = LlmAgent(
-    name="VerificationStatusAgent",
+check_appointment_verification_status_agent = LlmAgent(
+    name="CheckAppointmentVerificationStatusAgent",
     model=model_name,
     description="Agen yang bertugas memverifikasi identitas pasien.",
     instruction=("""
@@ -39,8 +39,8 @@ verification_status_agent = LlmAgent(
     tools=[dapatkan_data_pasien_dari_email]
 )
 
-patient_info_agent  = LlmAgent(
-    name="PatientInfoAgent",
+check_appointment_patient_info_agent  = LlmAgent(
+    name="CheckAppointmentPatientInfoAgent",
     model=model_lite,
     description="Agen yang menampilkan informasi identitas pasien (Nama, Tanggal Lahir, MRN).",
     instruction=("""
@@ -60,27 +60,27 @@ patient_info_agent  = LlmAgent(
     )
 )
 
-greeting_agent = LlmAgent(
-    name="GreetingAgent",
+check_apointment_greeting_agent = LlmAgent(
+    name="CheckAppointmentGreetingAgent",
     model=model_name,
     instruction=greeting_instruction,
-    description="Menyapa pengguna sesuai waktu setempat dan menanyakan langkah selajutnya.",
+    description="Menyapa pengguna sesuai waktu setempat dan menanyakan langkah selajutnya (periksa janji atau pendaftaran pasien baru).",
     tools=[dapatkan_waktu_sekarang]
 )
 
-patient_verification_workflow = SequentialAgent(
-    name="PatientVerificationWorkflow",
+check_appointment_patient_verification_workflow = SequentialAgent(
+    name="CheckApointmentPatientVerificationWorkflow",
     sub_agents=[
-        verify_patient_identity_agent, 
-        verification_status_agent, 
-        patient_info_agent, 
-        greeting_agent
+        check_appointment_verify_patient_identity_agent, 
+        check_appointment_verification_status_agent, 
+        check_appointment_patient_info_agent, 
+        check_apointment_greeting_agent
         ],
-    description="Workflow untuk memverifikasi identitas pasien.",
+    description="Workflow untuk memverifikasi identitas pasien sebelum mereka bisa memeriksa jadwal mereka dengan dokter.",
 )
 
-new_patient_registration_agent = LlmAgent(
-    name="RegistrationAgent",
+check_appointment_new_patient_registration_agent = LlmAgent(
+    name="CheckApointmentNewPatientRegistrationAgent",
     model=model_name,
     description="Agen untuk memandu pengguna melalui proses pendaftaran pasien baru.",
 instruction = registration_instruction,
@@ -121,16 +121,16 @@ check_appointment_root_agent = LlmAgent(
     description="Agen utama untuk proses verifikasi dan memeriksa jadwal janji temu pasien yang akan datang.",
     instruction=("""
     1. Selalu tanyakan email atau nomor telepon pengguna.\n
-    2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `patient_verification_workflow`.\n
-    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `new_patient_registration_agent`.
+    2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `check_appointment_patient_verification_workflow`.\n
+    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
     3. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `create_appointment_agent`.\n
 """),
     sub_agents=[
-        patient_verification_workflow,
+        check_appointment_patient_verification_workflow,
         check_appointment_agent,
-        new_patient_registration_agent
+        check_appointment_new_patient_registration_agent
         ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1

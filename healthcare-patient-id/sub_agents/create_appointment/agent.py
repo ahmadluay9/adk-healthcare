@@ -4,8 +4,8 @@ from ..general_search.agent import general_search_tool
 from ...tools import buat_janji_temu, dapatkan_tanggal_hari_ini, dapatkan_waktu_sekarang, model_name, model_lite, model_pro, dapatkan_data_pasien_dari_email, registrasi_pasien_baru
 from ..create_appointment.prompts import appointment_instruction, greeting_instruction, registration_instruction
 
-verify_patient_identity_agent = LlmAgent(
-    name="VerifyPatientIdentityAgent",
+create_appointment_verify_patient_identity_agent = LlmAgent(
+    name="CreateAppointmentVerifyPatientIdentityAgent",
     model=model_lite,
     description="Agen yang bertugas menyampaikan pesan sebelum proses verifikasi identitas pasien.",
     instruction=("""
@@ -18,8 +18,8 @@ verify_patient_identity_agent = LlmAgent(
     )
 )
 
-verification_status_agent = LlmAgent(
-    name="VerificationStatusAgent",
+create_appointment_verification_status_agent = LlmAgent(
+    name="CreatePatientVerificationStatusAgent",
     model=model_name,
     description="Agen yang bertugas memverifikasi identitas pasien.",
     instruction=("""
@@ -39,8 +39,8 @@ verification_status_agent = LlmAgent(
     tools=[dapatkan_data_pasien_dari_email]
 )
 
-patient_info_agent  = LlmAgent(
-    name="PatientInfoAgent",
+create_appointment_patient_info_agent  = LlmAgent(
+    name="CreateAppointmentPatientInfoAgent",
     model=model_lite,
     description="Agen yang menampilkan informasi identitas pasien (Nama, Tanggal Lahir, MRN).",
     instruction=("""
@@ -60,27 +60,27 @@ patient_info_agent  = LlmAgent(
     )
 )
 
-greeting_agent = LlmAgent(
-    name="GreetingAgent",
+create_appointment_greeting_agent = LlmAgent(
+    name="CreateAppointmentGreetingAgent",
     model=model_name,
     instruction=greeting_instruction,
-    description="Menyapa pengguna sesuai waktu setempat dan menanyakan langkah selajutnya.",
+    description="Menyapa pengguna sesuai waktu setempat dan menanyakan langkah selajutnya (buat janji temu atau pendaftaran pasien baru).",
     tools=[dapatkan_waktu_sekarang]
 )
 
-patient_verification_workflow = SequentialAgent(
-    name="PatientVerificationWorkflow",
+create_apointment_patient_verification_workflow = SequentialAgent(
+    name="CreateApointmentPatientVerificationWorkflow",
     sub_agents=[
-        verify_patient_identity_agent, 
-        verification_status_agent, 
-        patient_info_agent, 
-        greeting_agent
+        create_appointment_verify_patient_identity_agent, 
+        create_appointment_verification_status_agent, 
+        create_appointment_patient_info_agent, 
+        create_appointment_greeting_agent
         ],
-    description="Workflow untuk memverifikasi identitas pasien.",
+    description="Workflow untuk memverifikasi identitas pasien sebelum mereka bisa membuat janji temu mereka dengan dokter.",
 )
 
-new_patient_registration_agent = LlmAgent(
-    name="RegistrationAgent",
+create_apointment_new_patient_registration_agent = LlmAgent(
+    name="CreateApointmentNewPatientRegistrationAgent",
     model=model_name,
     description="Agen untuk memandu pengguna melalui proses pendaftaran pasien baru.",
 instruction = registration_instruction,
@@ -117,15 +117,15 @@ create_appointment_root_agent = LlmAgent(
     description="Agen utama untuk proses verifikasi dan membuat janji temu baru untuk pasien dengan dokter tertentu.",
     instruction="""
     1. Selalu tanyakan email atau nomor telepon pengguna.\n
-    2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `patient_verification_workflow`.\n
-    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `new_patient_registration_agent`.
+    2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `create_apointment_patient_verification_workflow`.\n
+    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `create_apointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
     4. Setelah verifikasi berhasil, pengguna bisa membuat janji temu dengan dokter menggunakan agen `create_appointment_agent`.\n
 """,
     sub_agents=[
-        patient_verification_workflow,
-        new_patient_registration_agent,
+        create_apointment_patient_verification_workflow,
+        create_apointment_new_patient_registration_agent,
         create_appointment_agent
         ],
     generate_content_config=types.GenerateContentConfig(
