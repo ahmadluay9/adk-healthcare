@@ -125,7 +125,7 @@ check_appointment_root_agent = LlmAgent(
     3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
-    3. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `create_appointment_agent`.\n
+    3. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `check_appointment_agent`.\n
 """),
     sub_agents=[
         check_appointment_patient_verification_workflow,
