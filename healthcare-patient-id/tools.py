@@ -345,7 +345,13 @@ def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional
     if error: return error
     
     id_pasien = patient_resource["id"]
-    query = f"Appointment?actor=Patient/{id_pasien}&status=booked&_sort=date&_count=1&_include=Appointment:patient&_include=Appointment:practitioner"
+    
+    # Dapatkan tanggal hari ini dalam format YYYY-MM-DD untuk filter kueri
+    zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
+    tanggal_hari_ini = datetime.datetime.now(zona_waktu_wib).strftime('%Y-%m-%d')
+
+    # Tambahkan filter 'date=ge...' untuk hanya mencari janji temu mulai hari ini (ge = greater or equal)
+    query = f"Appointment?actor=Patient/{id_pasien}&status=booked&date=ge{tanggal_hari_ini}&_sort=date&_count=1&_include=Appointment:patient&_include=Appointment:practitioner"
     bundle = make_fhir_request('GET', query)
 
     if not bundle or bundle.get("total", 0) == 0: return {"status": "error", "error_message": f"Tidak ada janji temu yang akan datang untuk pasien ini."}
@@ -394,7 +400,19 @@ def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional
                 queue_number = i + 1
                 break
     
-    reminder_text = f"Halo **{patient_name}**. Anda memiliki janji temu di **{nama_poli}** dengan **{doctor_name}** pada hari **{start_time.strftime('%A, %d %B %Y')}** pukul **{start_time.strftime('%H:%M')}**."
+    nama_hari = {0: "Senin", 1: "Selasa", 2: "Rabu", 3: "Kamis", 4: "Jumat", 5: "Sabtu", 6: "Minggu"}
+    nama_bulan = {1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"}
+
+    # Dapatkan nama hari dan bulan dari objek start_time
+    hari_janji_temu = nama_hari[start_time.weekday()]
+    bulan_janji_temu = nama_bulan[start_time.month]
+
+    # Susun string tanggal lengkap dalam format Bahasa Indonesia
+    tanggal_format_indonesia = f"{hari_janji_temu}, {start_time.day} {bulan_janji_temu} {start_time.year}"
+    
+    # Gunakan format tanggal yang baru di dalam pesan pengingat
+    reminder_text = f"Halo **{patient_name}**. Anda memiliki janji temu di **{nama_poli}** dengan **{doctor_name}** pada **{tanggal_format_indonesia}** pukul **{start_time.strftime('%H:%M')}**."
+
     queue_text = f"Nomor antrian Anda adalah **{queue_number}**."
     return {"status": "success", "report": f"{reminder_text}\n{queue_text}\n \n Ada lagi yang bisa saya bantu?"}
 
@@ -438,6 +456,14 @@ def buat_janji_temu(nama_dokter: str, nama_poli: str, tanggal_dan_waktu: str, na
     except ValueError:
         return {"status": "error", "error_message": "Format tanggal dan waktu tidak valid. Gunakan format YYYY-MM-DDTHH:MM:SS."}
 
+    zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
+    sekarang = datetime.datetime.now(zona_waktu_wib)
+
+    # Cek apakah tanggal janji temu sebelum tanggal hari ini
+    # Kita hanya membandingkan bagian tanggalnya saja (mengabaikan jam)
+    if start_time.date() < sekarang.date():
+        return {"status": "error", "error_message": "Anda tidak dapat membuat janji temu untuk tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau setelahnya."}
+    
     role_bundle = make_fhir_request('GET', f"PractitionerRole?practitioner=Practitioner/{id_dokter}&specialty:text={quote(nama_poli)}")
     
     if not role_bundle or role_bundle.get("total", 0) == 0:
@@ -480,9 +506,23 @@ def buat_janji_temu(nama_dokter: str, nama_poli: str, tanggal_dan_waktu: str, na
     new_appointment = make_fhir_request('POST', 'Appointment', payload=appointment_body)
     
     if new_appointment and new_appointment.get("id"):
-        # Gunakan `nama_lengkap_dokter` di laporan akhir
-        return {"status": "success", "report": f"Janji temu baru di **{nama_poli}** dengan **{nama_lengkap_dokter}** pada **{start_time.strftime('%d %B %Y pukul %H:%M')}** berhasil dibuat. Nomor antrian Anda adalah **{queue_number}**."}
-    
+
+        # Pemetaan untuk nama hari dan bulan dalam Bahasa Indonesia
+        nama_hari = {0: "Senin", 1: "Selasa", 2: "Rabu", 3: "Kamis", 4: "Jumat", 5: "Sabtu", 6: "Minggu"}
+        nama_bulan = {1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"}
+
+        # Dapatkan nama hari dan bulan dari objek start_time
+        hari_janji_temu = nama_hari[start_time.weekday()]
+        bulan_janji_temu = nama_bulan[start_time.month]
+
+        # Susun string tanggal lengkap dalam format Bahasa Indonesia
+        tanggal_format_indonesia = f"{hari_janji_temu}, {start_time.day} {bulan_janji_temu} {start_time.year}"
+        
+        # Gunakan format tanggal yang baru di dalam laporan
+        return {
+            "status": "success",
+            "report": f"Janji temu baru di **{nama_poli}** dengan **{nama_lengkap_dokter}** pada **{tanggal_format_indonesia} pukul {start_time.strftime('%H:%M')}** berhasil dibuat. Nomor antrian Anda adalah **{queue_number}**."
+        }
     return {"status": "error", "error_message": "Gagal membuat janji temu di sistem."}
 
 # Function to check insurance benefits after verification

@@ -61,6 +61,7 @@ appointment_instruction = """
     4. Apabila pasien menanyakan tentang dokter, selalu sampaikan nama poli, nama dokter lengkap dengan tanggal dan waktu. \n
     5. Pasien hanya dapat membuat janji temu dalam rentang maksimal 30 hari ke depan, karena jadwal praktik dokter tidak tersedia setelah periode tersebut. \n
     6. Gunakan informasi dari {patient_info} untuk mengisi data pasien (Nama depan, Nama Belakang, Tanggal Lahir, MRN).\n
+    7. Selalu Ubah input tanggal lahir menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n
     7. PENTING: Minta pasien menginput nama dokter lengkap dengan gelarnya berikan contoh dibawah.\n
         - Contoh: '**dr. Irina Syaefulloh, Sp.PD**'\n
     8. Sampaikan contoh dibawah ini untuk pasien input tanggal dan waktu untuk membuat janji.\n

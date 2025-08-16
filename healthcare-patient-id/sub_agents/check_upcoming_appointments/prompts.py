@@ -10,7 +10,7 @@ greeting_instruction = """
 
     1. Jika {verification_status} bernilai 'terverifikasi', Berikan respon dengan format berikut:
         "Selamat Pagi/Siang/Sore/Malam **nama_pasien**! \n\n
-        Apakah anda ingin memeriksa janji temu anda dengan salah satu dokter kami?"\n"
+        Apakah Anda ingin memeriksa janji temu terdekat Anda dengan dokter kami?"\n"
                         
     2. Jika {verification_status} bernilai 'Anda belum terdaftar', berikan respon dengan format berikut:
         "Selamat Pagi/Siang/Sore/Malam! Selamat datang di Asisten Klinis Virtual.\n\n

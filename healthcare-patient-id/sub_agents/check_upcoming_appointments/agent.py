@@ -99,9 +99,10 @@ check_appointment_agent = LlmAgent(
     description="Agen untuk memeriksa jadwal janji temu pasien yang akan datang dan mengirimkan tautan kuesioner.",
     instruction=("""                 
         Tugas Anda adalah membantu pasien memeriksa janji temu mereka.\n
-        1. Bila belum ada, tanyakan nama lengkap dan tanggal lahir pasien.\n
-        2. Panggil alat `periksa_janji_temu` dengan data yang sesuai.\n
-        3. Jika data ditemukan, berikan konfirmasi janji temu seperti contoh di bawah ini:\n
+        1. Gunakan informasi dari {patient_info} untuk mengisi data pasien (Nama depan, Nama Belakang, Tanggal Lahir, MRN).\n
+        2. Selalu ubah input tanggal lahir menjadi format ketat YYYY-MM-DD (contoh: '1985-05-20').\n
+        3. Panggil alat `periksa_janji_temu` dengan data yang sesuai.\n
+        4. Jika data ditemukan, berikan konfirmasi janji temu seperti contoh di bawah ini:\n
              'Halo **Bono Suwono**, **MRN: 0034567891**.\n
              Anda memiliki janji temu di **Poli Umum** dengan **dr. Irina Syaefulloh, Sp.PD**\n
              pada hari **Minggu, 17 Agustus 2025** pukul **10:00**.\n
