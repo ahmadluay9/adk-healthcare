@@ -2,7 +2,7 @@ from google.adk.agents import LlmAgent, SequentialAgent
 from google.genai import types
 from ...tools import periksa_janji_temu, model_name, model_pro, model_lite, dapatkan_data_pasien_dari_email, dapatkan_waktu_sekarang, registrasi_pasien_baru
 from ..new_patient_registration.prompts import registration_instruction
-from ..create_appointment.prompts import greeting_instruction
+from ..check_upcoming_appointments.prompts import greeting_instruction
 
 check_appointment_verify_patient_identity_agent = LlmAgent(
     name="CheckAppointmentVerifyPatientIdentityAgent",
