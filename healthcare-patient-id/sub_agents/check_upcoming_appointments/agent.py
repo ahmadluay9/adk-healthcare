@@ -42,14 +42,13 @@ check_appointment_verification_status_agent = LlmAgent(
 check_appointment_patient_info_agent  = LlmAgent(
     name="CheckAppointmentPatientInfoAgent",
     model=model_lite,
-    description="Agen yang menampilkan informasi identitas pasien (Nama, Tanggal Lahir, MRN).",
+    description="Agen yang menampilkan informasi identitas pasien (Nama, MRN).",
     instruction=("""
         Tugas Anda adalah sebagai berikut:\n
         1. Bila {verification_status} bernilai 'terverifikasi': 
             - Berikan respon dengan format berikut:\n
                 * Nama Depan:  \n
                 * Nama Belakang:  \n
-                * Tanggal Lahir: hari bulan tahun\n
                 * MRN: \n
             - Jangan tampilkan baris field yang kosong.
         2. Jika {verification_status} bernilai 'belum terdaftar', sampaikan kepada pengguna data anda tidak ditemukan.
@@ -121,7 +120,7 @@ check_appointment_root_agent = LlmAgent(
     name='CheckAppointmentRootAgent',
     description="Agen utama untuk proses verifikasi dan memeriksa jadwal janji temu pasien yang akan datang.",
     instruction=("""
-    1. Selalu tanyakan email atau nomor telepon pengguna.\n
+    1. Untuk pasien lama, selalu minta email atau nomor telepon sebagai verifikasi identitas. \n
     2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `check_appointment_patient_verification_workflow`.\n
     3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n

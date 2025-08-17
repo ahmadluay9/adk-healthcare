@@ -4,7 +4,7 @@ from google.adk.tools import VertexAiSearchTool
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from dotenv import load_dotenv
-from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini
+from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini, cari_jadwal_dokter
 
 load_dotenv()
 
@@ -22,13 +22,7 @@ general_search_agent = LlmAgent(
     Anda adalah asisten pencari informasi. 
 
     Aturan:
-    1. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan dari pengguna.
-    2. Selalu asumsikan dokter selalu praktik selama 30 hari kedepan, kecuali diluar hari praktiknya.
-    3. Jika pertanyaan terkait poli atau dokter, jawaban WAJIB mengikuti format berikut:
-    
-    "Nama Poli     : <nama_poli atau 'Informasi tidak ditemukan'> \n"
-    "Nama Dokter   : <nama_dokter atau 'Informasi tidak ditemukan'> \n"
-    "Jadwal Praktik: <hari, tanggal (dd-mm-yyyy), jam mulai–jam selesai> \n"
+    1. Gunakan `vertex_ai_search_tool` untuk menjawab pertanyaan dari pengguna.  
     
     Aturan tambahan:
     - Jika pengguna mencari informasi tentang poli klinik (misalnya jadwal poli, layanan yang tersedia, atau lokasi poli),
@@ -37,8 +31,7 @@ general_search_agent = LlmAgent(
 
     - Jika pengguna mencari informasi tentang dokter (misalnya jadwal dokter, spesialisasi, atau lokasi praktik),
     setelah memberikan informasi yang diminta, tawarkan:
-    "Apakah Anda ingin saya membantu membuatkan janji temu dengan dokter atau poli tersebut, 
-    atau Anda sudah memiliki janji dengan beliau dan ingin saya bantu memeriksanya?"
+    "Apakah Anda ingin saya membantu membuatkan janji temu dengan <nama_dokter>?"
     """,
     tools=[
         vertexai_search_tool
@@ -46,6 +39,7 @@ general_search_agent = LlmAgent(
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
     ),
+    output_key="search_results"
 )
 
 general_search_tool = AgentTool(agent=general_search_agent)
@@ -60,14 +54,21 @@ search_agent = LlmAgent(
     Aturan:
     1. Gunakan alat `dapatkan_tanggal_hari_ini` untuk mengetahui tanggal hari ini.
     2. Gunakan `general_search_tool` untuk menjawab pertanyaan dari pengguna.
-    3. Asumsikan jadwal praktik dokter berlaku untuk 30 hari ke depan, dengan hari praktik yang sama setiap minggunya, kecuali pada hari-hari di luar jadwal praktiknya.
-    4. Apabila pasien menanyakan tentang dokter atau poli, selalu sampaikan informasi nama poli, nama dokter lengkap dengan tanggal dan waktu.
+    3. Untuk mencari jadwal dokter lengkap gunakan alat `cari_jadwal_dokter`.\n
+    4. Ikuti aturan berikut sebelum mencari jadwal dokter:
+        a.PENTING: Pastikan nama poli ditulis lengkap sesuai format resmi berikan contoh yang benar dibawah.\n
+        - Contoh salah: 'umum'\n
+        - Contoh benar: 'Poli Umum'\n
+        Gunakan kapitalisasi huruf awal setiap kata dan sertakan kata 'Poli'.\n
+      b. PENTING: Pastikan nama dokter yang digunakan hanyalah NAMA BELAKANG saja. \n
+        - Contoh: Nama Lengkap:'dr. Irina Syaefulloh, Sp.PD' menjadi Nama Belakang: 'Syaefulloh'. \n
     5. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
    "Maaf, saya hanya dapat membantu terkait layanan medis dan informasi klinis di RS Sehat Selalu."
     """,
     tools=[
         general_search_tool,
-        dapatkan_tanggal_hari_ini
+        dapatkan_tanggal_hari_ini,
+        cari_jadwal_dokter
         ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1

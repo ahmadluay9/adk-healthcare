@@ -338,6 +338,100 @@ def registrasi_pasien_baru(
     else:
         return {"status": "error", "error_message": "Gagal mendaftarkan pasien baru ke dalam sistem."}
 
+# Function to search for doctor's schedule
+def cari_jadwal_dokter(nama_dokter: str, nama_poli: Optional[str] = None) -> dict:
+    """Mencari jadwal praktik dokter dan menampilkan tanggal praktik dalam 30 hari ke depan dalam Bahasa Indonesia."""
+    print(f"\n--- DEBUG: Memulai cari_jadwal_dokter ---")
+    print(f"Input: nama_dokter='{nama_dokter}', nama_poli='{nama_poli}'")
+
+    # 1. Cari Practitioner
+    practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(nama_dokter)}")
+    if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": f"Dokter dengan nama '{nama_dokter}' tidak ditemukan."}
+    
+    practitioner = practitioner_bundle["entry"][0]["resource"]
+    id_dokter = practitioner["id"]
+    
+    # Gabungkan nama lengkap dokter
+    doctor_name_parts = practitioner.get("name", [{}])[0]
+    prefix = " ".join(doctor_name_parts.get("prefix", []))
+    given = " ".join(doctor_name_parts.get("given", []))
+    family = doctor_name_parts.get("family", "")
+    suffix = ", ".join(doctor_name_parts.get("suffix", []))
+    doctor_full_name = " ".join(part for part in [prefix, given, family, suffix] if part).strip()
+
+    # 2. Cari PractitionerRole dengan filter poli jika diberikan
+    role_query = f"PractitionerRole?practitioner=Practitioner/{id_dokter}"
+    if nama_poli:
+        role_query += f"&specialty:text={quote(nama_poli)}"
+    
+    role_bundle = make_fhir_request('GET', role_query)
+    if not role_bundle or role_bundle.get("total", 0) == 0:
+        if nama_poli:
+            return {"status": "error", "error_message": f"Jadwal untuk {doctor_full_name} di {nama_poli} tidak ditemukan."}
+        else:
+            return {"status": "error", "error_message": f"Tidak ditemukan jadwal praktik untuk {doctor_full_name}."}
+
+    # Pemetaan untuk nama hari dan bulan dalam Bahasa Indonesia
+    nama_hari_map = {
+        "mon": "Senin", "tue": "Selasa", "wed": "Rabu", "thu": "Kamis",
+        "fri": "Jumat", "sat": "Sabtu", "sun": "Minggu"
+    }
+    nama_bulan_map = {
+        1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
+        7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+    }
+
+    # Dapatkan tanggal hari ini (dengan timezone yang benar)
+    zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
+    hari_ini = datetime.datetime.now(zona_waktu_wib).date()
+
+    # 3. Proses dan format jadwal
+    jadwal_text_list = []
+    for role_entry in role_bundle.get("entry", []):
+        role = role_entry.get("resource", {})
+        poli = role.get("specialty", [{}])[0].get("text", "Poli Umum")
+        
+        jadwal_poli = f"\n**{poli}**:"
+        jadwal_ditemukan = False
+
+        if "availableTime" in role:
+            for slot in role.get("availableTime", []):
+                days_of_week_abbr = slot.get("daysOfWeek", [])
+                days = [nama_hari_map.get(day.lower(), day) for day in days_of_week_abbr]
+                start = slot.get("availableStartTime", "")
+                end = slot.get("availableEndTime", "")
+                
+                if days and start and end:
+                    jadwal_poli += f"\n- **Jadwal Rutin**: {', '.join(days)} ({start} - {end})"
+                    jadwal_ditemukan = True
+
+                # Cari tanggal praktik spesifik dalam 30 hari ke depan
+                tanggal_praktik_list = []
+                if days_of_week_abbr:
+                    for i in range(30):
+                        tanggal_cek = hari_ini + datetime.timedelta(days=i)
+                        if tanggal_cek.strftime('%a').lower() in days_of_week_abbr:
+                            tanggal_format = f"{tanggal_cek.day} {nama_bulan_map[tanggal_cek.month]} {tanggal_cek.year}"
+                            tanggal_praktik_list.append(tanggal_format)
+                
+                if tanggal_praktik_list:
+                    jadwal_poli += f"\n- **Tanggal Praktik Terdekat**:"
+                    for tanggal in tanggal_praktik_list:
+                        jadwal_poli += f"\n    - {tanggal}"
+        
+        if jadwal_ditemukan:
+            jadwal_text_list.append(jadwal_poli)
+
+    if not jadwal_text_list:
+        return {"status": "error", "error_message": f"Tidak ada detail jadwal yang tersedia untuk {doctor_full_name}."}
+
+    # 4. Susun laporan akhir
+    report = f"Berikut adalah jadwal praktik untuk **{doctor_full_name}**:"
+    report += "".join(jadwal_text_list)
+    
+    return {"status": "success", "report": report}
+
 # Function to check upcoming appointments and send reminders    
 def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
     """Memberikan pengingat janji temu."""
@@ -526,80 +620,80 @@ def buat_janji_temu(nama_dokter: str, nama_poli: str, tanggal_dan_waktu: str, na
     return {"status": "error", "error_message": "Gagal membuat janji temu di sistem."}
 
 # Function to check insurance benefits after verification
-def cek_program_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
-    """Memeriksa program asuransi pasien setelah verifikasi."""
-    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
-    if error: return error
-    id_pasien = patient_resource["id"]
+# def cek_program_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+#     """Memeriksa program asuransi pasien setelah verifikasi."""
+#     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+#     if error: return error
+#     id_pasien = patient_resource["id"]
 
-    coverage_bundle = make_fhir_request('GET', f"Coverage?beneficiary=Patient/{id_pasien}")
-    if not coverage_bundle or coverage_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
+#     coverage_bundle = make_fhir_request('GET', f"Coverage?beneficiary=Patient/{id_pasien}")
+#     if not coverage_bundle or coverage_bundle.get("total", 0) == 0:
+#         return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
     
-    coverage = coverage_bundle["entry"][0]["resource"]
-    plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
-    return {"status": "success", "report": f"Anda terdaftar dalam program asuransi **'{plan_name}'**."}
+#     coverage = coverage_bundle["entry"][0]["resource"]
+#     plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
+#     return {"status": "success", "report": f"Anda terdaftar dalam program asuransi **'{plan_name}'**."}
 
-# Function to check insurance benefits after verification
-def cek_manfaat_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
-    """Memeriksa manfaat asuransi pasien setelah verifikasi."""
-    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
-    if error: return error
-    id_pasien = patient_resource["id"]
+# # Function to check insurance benefits after verification
+# def cek_manfaat_asuransi(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+#     """Memeriksa manfaat asuransi pasien setelah verifikasi."""
+#     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+#     if error: return error
+#     id_pasien = patient_resource["id"]
 
-    coverage_bundle = make_fhir_request('GET', f"Coverage?beneficiary=Patient/{id_pasien}")
-    if not coverage_bundle or coverage_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
+#     coverage_bundle = make_fhir_request('GET', f"Coverage?beneficiary=Patient/{id_pasien}")
+#     if not coverage_bundle or coverage_bundle.get("total", 0) == 0:
+#         return {"status": "error", "error_message": "Informasi asuransi (coverage) tidak ditemukan untuk pasien ini."}
     
-    coverage = coverage_bundle["entry"][0]["resource"]
-    plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
-    status = coverage.get("status", "tidak diketahui")
-    return {"status": "success", "report": f"Anda terdaftar dalam program asuransi '{plan_name}' dengan status '{status}'. Untuk detail manfaat lebih lanjut, silakan hubungi penyedia asuransi Anda."}
+#     coverage = coverage_bundle["entry"][0]["resource"]
+#     plan_name = coverage.get("type", {}).get("coding", [{}])[0].get("display", "Reguler")
+#     status = coverage.get("status", "tidak diketahui")
+#     return {"status": "success", "report": f"Anda terdaftar dalam program asuransi '{plan_name}' dengan status '{status}'. Untuk detail manfaat lebih lanjut, silakan hubungi penyedia asuransi Anda."}
 
-# Function to check insurance claim status after verification
-def cek_status_klaim(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
-    """Memeriksa status klaim asuransi terakhir pasien setelah verifikasi."""
-    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
-    if error: return error
-    id_pasien = patient_resource["id"]
+# # Function to check insurance claim status after verification
+# def cek_status_klaim(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+#     """Memeriksa status klaim asuransi terakhir pasien setelah verifikasi."""
+#     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+#     if error: return error
+#     id_pasien = patient_resource["id"]
 
-    claim_bundle = make_fhir_request('GET', f"Claim?patient=Patient/{id_pasien}&_sort=-created&_count=1")
-    if not claim_bundle or claim_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": "Tidak ada riwayat klaim yang ditemukan untuk pasien ini."}
+#     claim_bundle = make_fhir_request('GET', f"Claim?patient=Patient/{id_pasien}&_sort=-created&_count=1")
+#     if not claim_bundle or claim_bundle.get("total", 0) == 0:
+#         return {"status": "error", "error_message": "Tidak ada riwayat klaim yang ditemukan untuk pasien ini."}
 
-    claim = claim_bundle["entry"][0]["resource"]
-    status = claim.get("status", "tidak diketahui")
-    total_value = claim.get("total", {}).get("value", "N/A")
-    currency = claim.get("total", {}).get("currency", "")
-    created_date = datetime.datetime.fromisoformat(claim.get("created")).strftime('%d %B %Y')
-    return {"status": "success", "report": f"Klaim terakhir Anda pada tanggal {created_date} sebesar {total_value} {currency} saat ini memiliki status '{status}'."}
+#     claim = claim_bundle["entry"][0]["resource"]
+#     status = claim.get("status", "tidak diketahui")
+#     total_value = claim.get("total", {}).get("value", "N/A")
+#     currency = claim.get("total", {}).get("currency", "")
+#     created_date = datetime.datetime.fromisoformat(claim.get("created")).strftime('%d %B %Y')
+#     return {"status": "success", "report": f"Klaim terakhir Anda pada tanggal {created_date} sebesar {total_value} {currency} saat ini memiliki status '{status}'."}
 
-# Function to check last diagnosis
-def cek_diagnosis_terakhir(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
-    """Memeriksa diagnosis terakhir pasien dari riwayat kunjungan setelah verifikasi."""
-    patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
-    if error: return error
-    id_pasien = patient_resource["id"]
+# # Function to check last diagnosis
+# def cek_diagnosis_terakhir(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:
+#     """Memeriksa diagnosis terakhir pasien dari riwayat kunjungan setelah verifikasi."""
+#     patient_resource, error = verifikasi_pasien(nama_depan=nama_depan, nama_belakang=nama_belakang, tanggal_lahir=tanggal_lahir, mrn=mrn)
+#     if error: return error
+#     id_pasien = patient_resource["id"]
 
-    # Mencari Encounter (kunjungan) terakhir
-    encounter_bundle = make_fhir_request('GET', f"Encounter?patient=Patient/{id_pasien}&_sort=-date&_count=1")
-    if not encounter_bundle or encounter_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": "Tidak ditemukan riwayat kunjungan untuk pasien ini."}
+#     # Mencari Encounter (kunjungan) terakhir
+#     encounter_bundle = make_fhir_request('GET', f"Encounter?patient=Patient/{id_pasien}&_sort=-date&_count=1")
+#     if not encounter_bundle or encounter_bundle.get("total", 0) == 0:
+#         return {"status": "error", "error_message": "Tidak ditemukan riwayat kunjungan untuk pasien ini."}
 
-    encounter = encounter_bundle["entry"][0]["resource"]
+#     encounter = encounter_bundle["entry"][0]["resource"]
 
-    diagnosis_text = "Diagnosis tidak tercatat."
-    # Prioritas 1: Cek kolom 'diagnosis' (standar)
-    if "diagnosis" in encounter and len(encounter["diagnosis"]) > 0:
-        condition_ref = encounter["diagnosis"][0].get("condition", {}).get("reference")
-        if condition_ref:
-            condition_resource = make_fhir_request('GET', condition_ref)
-            if condition_resource and "code" in condition_resource:
-                diagnosis_text = condition_resource["code"].get("text", diagnosis_text)
-    # Prioritas 2: Jika tidak ada, cek kolom 'reasonCode' (alternatif)
-    elif "reasonCode" in encounter and len(encounter["reasonCode"]) > 0:
-        diagnosis_text = encounter["reasonCode"][0].get("text", diagnosis_text)
+#     diagnosis_text = "Diagnosis tidak tercatat."
+#     # Prioritas 1: Cek kolom 'diagnosis' (standar)
+#     if "diagnosis" in encounter and len(encounter["diagnosis"]) > 0:
+#         condition_ref = encounter["diagnosis"][0].get("condition", {}).get("reference")
+#         if condition_ref:
+#             condition_resource = make_fhir_request('GET', condition_ref)
+#             if condition_resource and "code" in condition_resource:
+#                 diagnosis_text = condition_resource["code"].get("text", diagnosis_text)
+#     # Prioritas 2: Jika tidak ada, cek kolom 'reasonCode' (alternatif)
+#     elif "reasonCode" in encounter and len(encounter["reasonCode"]) > 0:
+#         diagnosis_text = encounter["reasonCode"][0].get("text", diagnosis_text)
 
-    patient_name = patient_resource.get("name", [{}])[0].get("given", ["Pasien"])[0]
+#     patient_name = patient_resource.get("name", [{}])[0].get("given", ["Pasien"])[0]
     
-    return {"status": "success", "report": f"Halo {patient_name}. Berdasarkan kunjungan terakhir Anda, diagnosis yang tercatat adalah: {diagnosis_text}."}
+#     return {"status": "success", "report": f"Halo {patient_name}. Berdasarkan kunjungan terakhir Anda, diagnosis yang tercatat adalah: {diagnosis_text}."}
