@@ -55,6 +55,10 @@
                     </div>
                 </div>
                 <div class="flex items-center">
+                    <!-- TTS Button -->
+                    <button id="tts-btn" title="Toggle Text-to-Speech" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <!-- Speaker Icon will be injected by JS -->
+                    </button>
                     <!-- New Session Button -->
                     <button id="new-session-btn" title="New Session" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -93,6 +97,9 @@
         const USER_ID = `user_${Date.now()}`; // Create a unique user for each session
         let SESSION_ID = `session_${Date.now()}`; // Allow this to be updated for new sessions
 
+        // --- State ---
+        let isTtsEnabled = false; // TTS is disabled by default
+
         // --- DOM Elements ---
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
@@ -101,6 +108,7 @@
         const statusIndicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
         const newSessionBtn = document.getElementById('new-session-btn');
+        const ttsBtn = document.getElementById('tts-btn');
         
         // --- Speech Recognition Setup ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -116,6 +124,31 @@
             console.warn('Speech Recognition not supported in this browser.');
             if(micBtn) micBtn.style.display = 'none';
         }
+
+        // --- Text-to-Speech (TTS) Functions ---
+        const speakText = (text) => {
+            if (!isTtsEnabled || !('speechSynthesis' in window)) {
+                return;
+            }
+            // Clean up text for better speech (e.g., remove markdown bold)
+            const cleanedText = text.replace(/\*\*(.*?)\*\*/g, '$1');
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+            utterance.lang = 'id-ID'; // Set language to Indonesian
+            utterance.rate = 0.95; // Adjust speech rate for clarity
+            utterance.pitch = 1.1; // Adjust pitch
+            window.speechSynthesis.cancel(); // Stop any currently playing speech
+            window.speechSynthesis.speak(utterance);
+        };
+
+        const updateTtsButtonIcon = () => {
+            if (isTtsEnabled) {
+                ttsBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+                ttsBtn.title = "Disable Text-to-Speech";
+            } else {
+                ttsBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+                ttsBtn.title = "Enable Text-to-Speech";
+            }
+        };
 
         // --- Helper Functions ---
         const scrollToBottom = () => {
@@ -222,6 +255,7 @@
             if (part.text) {
                 removeTypingIndicator();
                 addMessage(part.text, author);
+                speakText(part.text); // Trigger TTS
             } 
         };
 
@@ -346,6 +380,14 @@
             micBtn.addEventListener('click', toggleListening);
         }
 
+        ttsBtn.addEventListener('click', () => {
+            isTtsEnabled = !isTtsEnabled;
+            updateTtsButtonIcon();
+            if (!isTtsEnabled) {
+                window.speechSynthesis.cancel(); // Stop speaking if disabled
+            }
+        });
+
         if (recognition) {
             recognition.onstart = () => {
                 isListening = true;
@@ -375,7 +417,10 @@
         }
 
         // --- Initial Load ---
-        window.addEventListener('load', initializeSession);
+        window.addEventListener('load', () => {
+            updateTtsButtonIcon();
+            initializeSession();
+        });
 
     </script>
 </body>

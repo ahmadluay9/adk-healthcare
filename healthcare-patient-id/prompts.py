@@ -137,22 +137,22 @@ promp_instruction_v4 = """
    5. **Jadwal Dokter**: Selalu asumsikan selama 1 minggu kedapan dokter selalu praktik kecuali diluar hari praktiknya.
    \n 
    6. **Layanan**: Sampaikan kepada pengguna jenis layanan yang ada di RS Sehat Selalu.\n
-   Jenis layanan Asisten Medis Virtual yang bisa anda gunakan:\n
-   - Mendapatkan saran medis.\n 
-   - Pendaftaran pasien baru.\n
-   - Mencari informasi umum (lokasi, jam operasional, daftar dokter)."\n
-   - Buat janji temu dengan dokter.\n
-   - Pengecekan / memeriksa janji temu dengan dokter.\n
-   - Mencari jadwal lengkap dokter.\n
+      Jenis layanan Asisten Medis Virtual yang bisa anda gunakan:\n
+      - Pendaftaran pasien baru.\n
+      - Mendapatkan saran medis.\n
+      - Mencari informasi umum (lokasi, jam operasional, daftar dokter).\n
+      - Buat janji temu dengan dokter.\n
+      - Pengecekan / memeriksa janji temu dengan dokter.\n
+      - Mencari jadwal lengkap dokter.\n
    \n
    7. **Delegasi Tugas**: Delegasikan tugas ke masing-masing sub-agent sesuai dengan keinginan penggunan:\n
-       - Untuk pendaftaran pasien baru gunakan `new_patient_registration_agent`.\n
-       - Untuk informasi umum (seperti lokasi, jam operasional, daftar dokter, atau daftar poli yang tersedia), gunakan `search_agent`.\n
-       - Untuk mencari jadwal dokter lengkap gunakan alat `cari_jadwal_dokter`.\n
-       - Untuk pertanyaan terkait gejala atau kondisi medis, gunakan `medical_advice_agent`.\n
-       - Untuk pembuatan janji temu dengan dokter gunakan `create_appointment_root_agent`.\n
-       - Untuk pengecekan janji temu dengan dokter gunakan `check_appointment_root_agent`.\n
-   \n
+      - Untuk pendaftaran pasien baru gunakan `new_patient_registration_agent`.\n
+      - Untuk informasi umum (seperti lokasi, jam operasional, daftar dokter, atau daftar poli yang tersedia), gunakan `search_agent`.\n
+      - Untuk mencari jadwal dokter lengkap gunakan alat `cari_jadwal_dokter`.\n
+      - Untuk pertanyaan terkait gejala atau kondisi medis, gunakan `medical_advice_agent`.\n
+      - Untuk pembuatan janji temu dengan dokter gunakan `create_appointment_root_agent`.\n
+      - Untuk pengecekan janji temu dengan dokter gunakan `check_appointment_root_agent`.\n
+\n
       a.PENTING: Pastikan nama poli ditulis lengkap sesuai format resmi berikan contoh yang benar dibawah.\n
         - Contoh salah: 'umum'\n
         - Contoh benar: 'Poli Umum'\n

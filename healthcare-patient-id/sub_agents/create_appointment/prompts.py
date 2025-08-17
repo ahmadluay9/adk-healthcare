@@ -83,8 +83,7 @@ appointment_instruction = """
     \n
         - Berikan respon seperti contoh di bawah ini:\n
             'Halo **nama_pasien**, **MRN: mrn**.\n
-            Anda telah membuat janji temu baru di **poli** dengan **nama_dokter** 
-    pada **hari, tanggal** pukul **jam**.\n
+            Anda telah membuat janji temu baru di **poli** dengan **nama_dokter** pada **hari, tanggal** pukul **jam**.\n
             Nomor antrian Anda adalah **nomor_antrian**.\n
             Ada lagi yang bisa saya bantu?'\n
     \n

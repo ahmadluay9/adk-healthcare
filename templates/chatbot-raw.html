@@ -61,6 +61,9 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                         <button id="tts-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors" title="Toggle Text-to-Speech">
+                            <!-- Speaker Icon will be injected by JS -->
+                         </button>
                          <button id="new-session-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors" title="New Session">
                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                          </button>
@@ -156,6 +159,7 @@
         let allResponses = [];
         let currentResponseIndex = -1;
         let isListening = false;
+        let isTtsEnabled = false; // TTS is disabled by default
 
         // --- Color Hashing for Agents ---
         const stringToHashCode = (str) => {
@@ -188,6 +192,7 @@
         const sendBtn = document.getElementById('send-btn');
         const micBtn = document.getElementById('mic-btn');
         const newSessionBtn = document.getElementById('new-session-btn');
+        const ttsBtn = document.getElementById('tts-btn');
         const statusIndicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
         const jsonOutputArea = document.getElementById('json-output-area');
@@ -236,6 +241,31 @@
             console.warn("Speech Recognition not supported in this browser.");
             if(micBtn) micBtn.style.display = 'none';
         }
+
+        // --- Text-to-Speech (TTS) Functions ---
+        const speakText = (text) => {
+            if (!isTtsEnabled || !('speechSynthesis' in window)) {
+                return;
+            }
+            // Clean up text for better speech (e.g., remove markdown bold)
+            const cleanedText = text.replace(/\*\*(.*?)\*\*/g, '$1');
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+            utterance.lang = 'id-ID'; // Set language to Indonesian
+            utterance.rate = 0.95; // Adjust speech rate for clarity
+            utterance.pitch = 1.1; // Adjust pitch
+            window.speechSynthesis.cancel(); // Stop any currently playing speech
+            window.speechSynthesis.speak(utterance);
+        };
+
+        const updateTtsButtonIcon = () => {
+            if (isTtsEnabled) {
+                ttsBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+                ttsBtn.title = "Disable Text-to-Speech";
+            } else {
+                ttsBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+                ttsBtn.title = "Enable Text-to-Speech";
+            }
+        };
 
 
         // --- Helper Functions ---
@@ -386,6 +416,7 @@
             if (part.text) {
                 removeTypingIndicator();
                 addMessage(part.text, author);
+                speakText(part.text); // Trigger TTS for bot messages
             } 
             else if (part.functionCall) {
                 addSystemEvent(`Tool Call: <b>${part.functionCall.name}</b> by ${author}`);
@@ -521,9 +552,20 @@
             });
         }
 
+        ttsBtn.addEventListener('click', () => {
+            isTtsEnabled = !isTtsEnabled;
+            updateTtsButtonIcon();
+            if (!isTtsEnabled) {
+                window.speechSynthesis.cancel(); // Stop speaking if disabled
+            }
+        });
+
 
         // --- Initial Load ---
-        window.addEventListener('load', initializeSession);
+        window.addEventListener('load', () => {
+            updateTtsButtonIcon(); // Set the initial icon for the TTS button
+            initializeSession();
+        });
 
     </script>
 </body>
