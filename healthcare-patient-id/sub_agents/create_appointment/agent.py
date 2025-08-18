@@ -63,7 +63,7 @@ create_appointment_patient_info_agent  = LlmAgent(
                 * Nama Belakang:  \n
                 * MRN: \n
             - Jangan tampilkan baris field yang kosong.
-        2. Jika {verification_status} bernilai 'tidak terdaftar', sampaikan kepada pengguna data anda tidak ditemukan dan minta untuk periksa kembali.
+        2. Jika {verification_status} bernilai 'tidak terdaftar', minta pengguna untuk periksa kembali email/nomor telepon yang dimasukan.
     """),
     output_key="patient_info",
     generate_content_config=types.GenerateContentConfig(

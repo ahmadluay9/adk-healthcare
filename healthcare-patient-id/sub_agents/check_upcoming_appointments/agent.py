@@ -53,7 +53,7 @@ check_appointment_patient_info_agent  = LlmAgent(
                 * Nama Belakang:  \n
                 * MRN: \n
             - Jangan tampilkan baris field yang kosong.
-        2. Jika {verification_status} bernilai 'tidak terdaftar', sampaikan kepada pengguna data anda tidak ditemukan dan minta untuk periksa kembali.
+        2. Jika {verification_status} bernilai 'tidak terdaftar', minta pengguna untuk periksa kembali email/nomor telepon yang dimasukan.
     """),
     output_key="patient_info",
     generate_content_config=types.GenerateContentConfig(
@@ -127,7 +127,7 @@ check_appointment_root_agent = LlmAgent(
     3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
-    4. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `check_appointment_agent`.\n
+    . Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `check_appointment_agent`.\n
 """),
     sub_agents=[
         check_appointment_patient_verification_workflow,
