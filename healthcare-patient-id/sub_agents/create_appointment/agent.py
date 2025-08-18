@@ -34,9 +34,11 @@ create_appointment_verification_status_agent = LlmAgent(
     description="Agen yang bertugas mencarikan data pasien.",
     instruction=("""
         Tugas Anda adalah adalah sebagai berikut:\n
-        1. Gunakan email yang dimasukan pengguna untuk mendapatkan data pasien.\n
-        2. Panggil alat `dapatkan_data_pasien` untuk mendapatkan data pasien.
-        3. Berdasarkan hasil dari pengecekan data pasien tersebut:\n
+        1. Gunakan email atau nomor telepon yang dimasukan pengguna untuk mendapatkan data pasien.\n
+        2. Jika menggunakan email, pastikan seluruh huruf diubah menjadi huruf kecil (lowercase) sebelum diproses.\n
+        3. Pastikan format nomor telepon di ubah dalam format internasional (contoh: 6281234567890).\n
+        4. Panggil alat `dapatkan_data_pasien` untuk mendapatkan data pasien.
+        5. Berdasarkan hasil dari pengecekan data pasien tersebut:\n
             a. Sampaikan respon dibawah ini jika pasien sudah terdaftar: \n
               - 'Terima kasih, **nama_lengkap_pasien**. Data Anda berhasil ditemukan.'\n
             b. Sampaikan respon dibawah ini jika pasien belum terdaftar: \n

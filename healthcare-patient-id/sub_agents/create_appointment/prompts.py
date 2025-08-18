@@ -14,7 +14,7 @@ greeting_instruction = """
     2. Jika {verification_status} bernilai 'Anda belum terdaftar', berikan respon dengan format berikut:
         "Selamat Pagi/Siang/Sore/Malam! Selamat datang di Asisten Klinis Virtual.\n\n
         Apakah Anda pasien baru dan ingin melanjutkan ke proses pendaftaran?\n
-        Jika Anda pasien lama, mohon periksa kembali informasi yang Anda berikan dan lakukan verifikasi ulang."
+        Jika Anda pasien lama, mohon periksa kembali data yang Anda masukkan dan coba ulangi dengan informasi yang benar.\n"
 """
 
 registration_instruction = """
