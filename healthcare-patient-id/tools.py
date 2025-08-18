@@ -130,11 +130,11 @@ def make_fhir_request(method: str, resource_path: str, payload: dict = None):
         return None
 
 # Function to verify patient identity using MRN or name and birthdate
-def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None, email: Optional[str] = None):
-    """Memverifikasi identitas pasien menggunakan MRN (prioritas) atau kombinasi nama belakang dan tanggal lahir."""
+def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None, email: Optional[str] = None, nomor_telepon: Optional[str] = None):
+    """Memverifikasi identitas pasien menggunakan email, nomor telepon, MRN, atau kombinasi nama dan tanggal lahir."""
     
     print("\n--- DEBUG: Memulai verifikasi_pasien ---")
-    print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}', mrn='{mrn}'")
+    print(f"Input: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}', mrn='{mrn}', email='{email}', nomor_telepon='{nomor_telepon}'")
     
     if email:
         print(f"DEBUG: Melakukan verifikasi menggunakan Email: {email}")
@@ -146,6 +146,16 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
             return None, {"status": "error", "error_message": "Ditemukan lebih dari satu pasien dengan email tersebut. Mohon gunakan metode verifikasi lain."}
         return patient_bundle["entry"][0]["resource"], None
     
+    if nomor_telepon:
+        print(f"DEBUG: Melakukan verifikasi menggunakan Nomor Telepon: {nomor_telepon}")
+        query_path = f"Patient?telecom={quote(nomor_telepon)}"
+        patient_bundle = make_fhir_request('GET', query_path)
+        if not patient_bundle or patient_bundle.get("total", 0) == 0:
+            return None, {"status": "error", "error_message": f"Pasien dengan nomor telepon '{nomor_telepon}' tidak ditemukan."}
+        if patient_bundle.get("total", 0) > 1:
+            return None, {"status": "error", "error_message": "Ditemukan lebih dari satu pasien dengan nomor telepon tersebut. Mohon gunakan metode verifikasi lain."}
+        return patient_bundle["entry"][0]["resource"], None
+
     if mrn and tanggal_lahir:
         print("DEBUG: Melakukan verifikasi menggunakan MRN dan Tanggal Lahir.")
         query_path = f"Patient?identifier={mrn}&birthdate={tanggal_lahir}"
@@ -177,20 +187,24 @@ def verifikasi_pasien(nama_depan: Optional[str] = None, nama_belakang: Optional[
         print("DEBUG: Gagal verifikasi karena informasi tidak lengkap.")
         return None, {"status": "error", "error_message": "Informasi tidak lengkap. Mohon berikan data verifikasi yang diperlukan."}
 
-def dapatkan_data_pasien_dari_email(email: str) -> dict:
-    """Mendapatkan detail data pasien (nama, tanggal lahir, MRN) berdasarkan alamat email."""
+def dapatkan_data_pasien(email: Optional[str] = None, nomor_telepon: Optional[str] = None) -> dict:
+    """Mendapatkan detail data pasien (nama, tanggal lahir, MRN) berdasarkan alamat email atau nomor Telepon."""
     
-    print(f"\n--- DEBUG: Memulai dapatkan_data_pasien_dari_email ---")
-    print(f"Input: email='{email}'")
+    print(f"\n--- DEBUG: Memulai dapatkan_data_pasien ---")
+    print(f"Input: email='{email}', nomor_telepon='{nomor_telepon}'")
 
-    patient_resource, error = verifikasi_pasien(email=email)
+    if not email and not nomor_telepon:
+        return {"status": "error", "error_message": "Mohon berikan email atau nomor Telepon untuk mencari data pasien."}
+
+    # Memanggil verifikasi_pasien dengan data yang diberikan
+    patient_resource, error = verifikasi_pasien(email=email, nomor_telepon=nomor_telepon)
     
     if error:
-        print(f"DEBUG: Verifikasi via email gagal: {error}")
+        print(f"DEBUG: Verifikasi gagal: {error}")
         return error
 
     if patient_resource:
-        print("DEBUG: Pasien ditemukan via email.")
+        print("DEBUG: Pasien ditemukan.")
         # Ekstrak data yang diperlukan
         nama_depan = patient_resource.get("name", [{}])[0].get("given", ["(tidak ada)"])[0]
         nama_belakang = patient_resource.get("name", [{}])[0].get("family", "(tidak ada)")
@@ -203,8 +217,9 @@ def dapatkan_data_pasien_dari_email(email: str) -> dict:
                     mrn_value = identifier.get("value", "(tidak ada)")
                     break
         
+        input_type = f"email {email}" if email else f"nomor Telepon {nomor_telepon}"
         report = (
-            f"Data untuk pasien dengan email {email} berhasil ditemukan:\n"
+            f"Data untuk pasien dengan {input_type} berhasil ditemukan:\n"
             f"- Nama Depan: {nama_depan}\n"
             f"- Nama Belakang: {nama_belakang}\n"
             f"- Tanggal Lahir: {tanggal_lahir}\n"
@@ -272,7 +287,7 @@ def get_next_mrn():
 
 def registrasi_pasien_baru(
     nama_depan: str,
-    nomor_hp: str,
+    nomor_telepon: str,
     alamat: str,
     jenis_identitas: str,
     nomor_identitas: str,
@@ -289,21 +304,30 @@ def registrasi_pasien_baru(
     nama_belakang: Optional[str] = None,
     email: Optional[str] = None,
 ) -> dict:
-    """Mendaftarkan pasien baru ke dalam sistem FHIR."""
+    """Mendaftarkan pasien baru dengan validasi nomor Telepon dan email."""
     
     print("\n--- DEBUG: Memulai registrasi_pasien_baru ---")
-    print(f"Input Diterima: nama_depan='{nama_depan}', nama_belakang='{nama_belakang}', tanggal_lahir='{tanggal_lahir}'")
-    
+    print(f"Input Diterima: nama_depan='{nama_depan}', nomor_telepon='{nomor_telepon}', email='{email}'")
+
+    # 1. Validasi Nomor Telepon
+    existing_patient_by_phone = make_fhir_request('GET', f"Patient?telecom={quote(nomor_telepon)}")
+    if existing_patient_by_phone and existing_patient_by_phone.get("total", 0) > 0:
+        return {"status": "error", "error_message": f"Nomor Telepon '{nomor_telepon}' sudah terdaftar di sistem."}
+
+    # 2. Validasi Email (jika ada)
+    if email:
+        existing_patient_by_email = make_fhir_request('GET', f"Patient?email={quote(email)}")
+        if existing_patient_by_email and existing_patient_by_email.get("total", 0) > 0:
+            return {"status": "error", "error_message": f"Email '{email}' sudah terdaftar di sistem."}
+
     new_mrn = get_next_mrn()
     print(f"DEBUG: MRN baru yang dibuat: {new_mrn}")
 
-    print(f"DEBUG: Jenis Kelamin yang diterima: {jenis_kelamin}")
-
     name_list = [{"given": [nama_depan], "family": nama_belakang, "use": "official"}]
     if nama_tengah:
-        name_list[0]["given"].append(nama_tengah)
+        name_list[0]["given"].insert(1, nama_tengah) # Menyisipkan nama tengah di antara nama depan dan belakang
 
-    telecom_list = [{"system": "phone", "value": nomor_hp, "use": "mobile"}]
+    telecom_list = [{"system": "phone", "value": nomor_telepon, "use": "mobile"}]
     if email:
         telecom_list.append({"system": "email", "value": email})
 
@@ -314,16 +338,16 @@ def registrasi_pasien_baru(
             {"use": "official", "type": {"text": jenis_identitas}, "value": nomor_identitas}
         ],
         "name": name_list,
-        "gender": jenis_kelamin,
+        "gender": jenis_kelamin.lower(), # Pastikan formatnya lowercase (male, female, other, unknown)
         "birthDate": tanggal_lahir,
         "telecom": telecom_list,
-        "address": [{"text": alamat, "use": "home"}],
+        "address": [{"text": alamat, "use": "home", "extension": [{"url": "http://hl7.org/fhir/StructureDefinition/patient-address-birthPlace", "valueString": tempat_lahir}]}],
         "extension": [
             {"url": "http://example.info/extension/agama", "valueString": agama},
             {"url": "http://example.info/extension/pendidikan", "valueString": pendidikan},
             {"url": "http://example.info/extension/pekerjaan", "valueString": pekerjaan},
             {"url": "http://example.info/extension/golongan_darah", "valueString": golongan_darah},
-            {"url": "http://hl7.org/fhir/StructureDefinition/patient-nationality", "valueString": kewarganegaraan},
+            {"url": "http://hl7.org/fhir/StructureDefinition/patient-nationality", "valueCode": kewarganegaraan},
         ],
         "maritalStatus": {"text": status_perkawinan},
     }
@@ -334,43 +358,23 @@ def registrasi_pasien_baru(
     print(f"DEBUG: Respons dari server FHIR: {response}")
     
     if response and response.get("id"):
-        return {"status": "success", "report": f"Pendaftaran berhasil! Pasien '{nama_depan} {nama_belakang}' telah terdaftar dengan Nomor Rekam Medis (MRN): {new_mrn}"}
+        full_name = nama_depan
+        if nama_tengah:
+            full_name += f" {nama_tengah}"
+        if nama_belakang:
+            full_name += f" {nama_belakang}"
+        return {"status": "success", "report": f"Pendaftaran berhasil! Pasien '{full_name}' telah terdaftar dengan Nomor Rekam Medis (MRN): {new_mrn}"}
     else:
         return {"status": "error", "error_message": "Gagal mendaftarkan pasien baru ke dalam sistem."}
 
 # Function to search for doctor's schedule
-def cari_jadwal_dokter(nama_dokter: str, nama_poli: Optional[str] = None) -> dict:
+def cari_jadwal_dokter(nama_dokter: Optional[str] = None, nama_poli: Optional[str] = None) -> dict:
     """Mencari jadwal praktik dokter dan menampilkan tanggal praktik dalam 30 hari ke depan dalam Bahasa Indonesia."""
     print(f"\n--- DEBUG: Memulai cari_jadwal_dokter ---")
     print(f"Input: nama_dokter='{nama_dokter}', nama_poli='{nama_poli}'")
 
-    # 1. Cari Practitioner
-    practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(nama_dokter)}")
-    if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
-        return {"status": "error", "error_message": f"Dokter dengan nama '{nama_dokter}' tidak ditemukan."}
-    
-    practitioner = practitioner_bundle["entry"][0]["resource"]
-    id_dokter = practitioner["id"]
-    
-    # Gabungkan nama lengkap dokter
-    doctor_name_parts = practitioner.get("name", [{}])[0]
-    prefix = " ".join(doctor_name_parts.get("prefix", []))
-    given = " ".join(doctor_name_parts.get("given", []))
-    family = doctor_name_parts.get("family", "")
-    suffix = ", ".join(doctor_name_parts.get("suffix", []))
-    doctor_full_name = " ".join(part for part in [prefix, given, family, suffix] if part).strip()
-
-    # 2. Cari PractitionerRole dengan filter poli jika diberikan
-    role_query = f"PractitionerRole?practitioner=Practitioner/{id_dokter}"
-    if nama_poli:
-        role_query += f"&specialty:text={quote(nama_poli)}"
-    
-    role_bundle = make_fhir_request('GET', role_query)
-    if not role_bundle or role_bundle.get("total", 0) == 0:
-        if nama_poli:
-            return {"status": "error", "error_message": f"Jadwal untuk {doctor_full_name} di {nama_poli} tidak ditemukan."}
-        else:
-            return {"status": "error", "error_message": f"Tidak ditemukan jadwal praktik untuk {doctor_full_name}."}
+    if not nama_dokter and not nama_poli:
+        return {"status": "error", "error_message": "Mohon berikan nama dokter atau nama poli untuk memulai pencarian."}
 
     # Pemetaan untuk nama hari dan bulan dalam Bahasa Indonesia
     nama_hari_map = {
@@ -386,51 +390,177 @@ def cari_jadwal_dokter(nama_dokter: str, nama_poli: Optional[str] = None) -> dic
     zona_waktu_wib = datetime.timezone(datetime.timedelta(hours=7))
     hari_ini = datetime.datetime.now(zona_waktu_wib).date()
 
-    # 3. Proses dan format jadwal
-    jadwal_text_list = []
-    for role_entry in role_bundle.get("entry", []):
-        role = role_entry.get("resource", {})
-        poli = role.get("specialty", [{}])[0].get("text", "Poli Umum")
+    # --- LOGIKA PENCARIAN BERDASARKAN NAMA DOKTER ---
+    if nama_dokter:
+        practitioner_bundle = make_fhir_request('GET', f"Practitioner?name:contains={quote(nama_dokter)}")
+        if not practitioner_bundle or practitioner_bundle.get("total", 0) == 0:
+            return {"status": "error", "error_message": f"Dokter dengan nama '{nama_dokter}' tidak ditemukan."}
         
-        jadwal_poli = f"\n**{poli}**:"
-        jadwal_ditemukan = False
-
-        if "availableTime" in role:
-            for slot in role.get("availableTime", []):
-                days_of_week_abbr = slot.get("daysOfWeek", [])
-                days = [nama_hari_map.get(day.lower(), day) for day in days_of_week_abbr]
-                start = slot.get("availableStartTime", "")
-                end = slot.get("availableEndTime", "")
-                
-                if days and start and end:
-                    jadwal_poli += f"\n- **Jadwal Rutin**: {', '.join(days)} ({start} - {end})"
-                    jadwal_ditemukan = True
-
-                # Cari tanggal praktik spesifik dalam 30 hari ke depan
-                tanggal_praktik_list = []
-                if days_of_week_abbr:
-                    for i in range(30):
-                        tanggal_cek = hari_ini + datetime.timedelta(days=i)
-                        if tanggal_cek.strftime('%a').lower() in days_of_week_abbr:
-                            tanggal_format = f"{tanggal_cek.day} {nama_bulan_map[tanggal_cek.month]} {tanggal_cek.year}"
-                            tanggal_praktik_list.append(tanggal_format)
-                
-                if tanggal_praktik_list:
-                    jadwal_poli += f"\n- **Tanggal Praktik Terdekat**:"
-                    for tanggal in tanggal_praktik_list:
-                        jadwal_poli += f"\n    - {tanggal}"
+        practitioner = practitioner_bundle["entry"][0]["resource"]
+        id_dokter = practitioner["id"]
         
-        if jadwal_ditemukan:
-            jadwal_text_list.append(jadwal_poli)
+        doctor_name_parts = practitioner.get("name", [{}])[0]
+        prefix = " ".join(doctor_name_parts.get("prefix", []))
+        given = " ".join(doctor_name_parts.get("given", []))
+        family = doctor_name_parts.get("family", "")
+        suffix = ", ".join(doctor_name_parts.get("suffix", []))
+        doctor_full_name = " ".join(part for part in [prefix, given, family, suffix] if part).strip()
 
-    if not jadwal_text_list:
-        return {"status": "error", "error_message": f"Tidak ada detail jadwal yang tersedia untuk {doctor_full_name}."}
+        role_query = f"PractitionerRole?practitioner=Practitioner/{id_dokter}"
+        if nama_poli:
+            role_query += f"&specialty:text={quote(nama_poli)}"
+        
+        role_bundle = make_fhir_request('GET', role_query)
+        if not role_bundle or role_bundle.get("total", 0) == 0:
+            return {"status": "error", "error_message": f"Tidak ditemukan jadwal praktik untuk {doctor_full_name}."}
+
+        report_parts = [f"Berikut adalah jadwal praktik untuk **{doctor_full_name}**:"]
+        for role_entry in role_bundle.get("entry", []):
+            role = role_entry.get("resource", {})
+            poli = role.get("specialty", [{}])[0].get("text", "Poli Umum")
+            jadwal_poli = f"\n**{poli}**:"
+            jadwal_ditemukan = False
+            if "availableTime" in role:
+                for slot in role.get("availableTime", []):
+                    days_of_week_abbr = slot.get("daysOfWeek", [])
+                    days = [nama_hari_map.get(day.lower(), day) for day in days_of_week_abbr]
+                    start, end = slot.get("availableStartTime", ""), slot.get("availableEndTime", "")
+                    if days and start and end:
+                        jadwal_poli += f"\n- **Jadwal Rutin**: {', '.join(days)} ({start} - {end})"
+                        jadwal_ditemukan = True
+                    tanggal_praktik_list = []
+                    if days_of_week_abbr:
+                        for i in range(30):
+                            tanggal_cek = hari_ini + datetime.timedelta(days=i)
+                            if tanggal_cek.strftime('%a').lower() in days_of_week_abbr:
+                                tanggal_format = f"{nama_hari_map[tanggal_cek.strftime('%a').lower()]}, {tanggal_cek.day} {nama_bulan_map[tanggal_cek.month]} {tanggal_cek.year}"
+                                tanggal_praktik_list.append(tanggal_format)
+                    if tanggal_praktik_list:
+                        jadwal_poli += f"\n- **Tanggal Praktik Terdekat**:"
+                        for tanggal in tanggal_praktik_list:
+                            jadwal_poli += f"\n    - {tanggal}"
+            if jadwal_ditemukan:
+                report_parts.append(jadwal_poli)
+        return {"status": "success", "report": "".join(report_parts)}
+
+    # --- LOGIKA PENCARIAN BERDASARKAN NAMA POLI ---
+    elif nama_poli:
+        query = f"PractitionerRole?specialty:text={quote(nama_poli)}&_include=PractitionerRole:practitioner"
+        bundle = make_fhir_request('GET', query)
+        if not bundle or bundle.get("total", 0) == 0:
+            return {"status": "error", "error_message": f"Tidak ditemukan dokter atau jadwal di {nama_poli}."}
+
+        practitioners = {f'Practitioner/{p["resource"]["id"]}': p["resource"] for p in bundle.get("entry", []) if p.get("resource", {}).get("resourceType") == "Practitioner"}
+        roles = [r["resource"] for r in bundle.get("entry", []) if r.get("resource", {}).get("resourceType") == "PractitionerRole"]
+        
+        schedules_by_doctor = {}
+        for role in roles:
+            practitioner_ref = role.get("practitioner", {}).get("reference")
+            if practitioner_ref not in schedules_by_doctor:
+                schedules_by_doctor[practitioner_ref] = []
+            schedules_by_doctor[practitioner_ref].append(role)
+
+        if not schedules_by_doctor:
+            return {"status": "error", "error_message": f"Tidak ditemukan jadwal dokter di {nama_poli}."}
+
+        report_parts = [f"Berikut adalah jadwal dokter yang tersedia di **{nama_poli}**:"]
+        for practitioner_ref, doctor_roles in schedules_by_doctor.items():
+            practitioner = practitioners.get(practitioner_ref)
+            if not practitioner: continue
+
+            name_parts = practitioner.get("name", [{}])[0]
+            prefix = " ".join(name_parts.get("prefix", []))
+            given = " ".join(name_parts.get("given", []))
+            family = name_parts.get("family", "")
+            suffix = ", ".join(name_parts.get("suffix", []))
+            doctor_full_name = " ".join(part for part in [prefix, given, family, suffix] if part).strip()
+            report_parts.append(f"\n\n**{doctor_full_name}**:")
+
+            for role in doctor_roles:
+                jadwal_poli = ""
+                jadwal_ditemukan = False
+                if "availableTime" in role:
+                    for slot in role.get("availableTime", []):
+                        days_of_week_abbr = slot.get("daysOfWeek", [])
+                        days = [nama_hari_map.get(day.lower(), day) for day in days_of_week_abbr]
+                        start, end = slot.get("availableStartTime", ""), slot.get("availableEndTime", "")
+                        if days and start and end:
+                            jadwal_poli += f"\n- **Jadwal Rutin**: {', '.join(days)} ({start} - {end})"
+                            jadwal_ditemukan = True
+                        tanggal_praktik_list = []
+                        if days_of_week_abbr:
+                            for i in range(30):
+                                tanggal_cek = hari_ini + datetime.timedelta(days=i)
+                                if tanggal_cek.strftime('%a').lower() in days_of_week_abbr:
+                                    tanggal_format = f"{nama_hari_map[tanggal_cek.strftime('%a').lower()]}, {tanggal_cek.day} {nama_bulan_map[tanggal_cek.month]} {tanggal_cek.year}"
+                                    tanggal_praktik_list.append(tanggal_format)
+                        if tanggal_praktik_list:
+                            jadwal_poli += f"\n- **Tanggal Praktik Terdekat**:"
+                            for tanggal in tanggal_praktik_list:
+                                jadwal_poli += f"\n    - {tanggal}"
+                if jadwal_ditemukan:
+                    report_parts.append(jadwal_poli)
+        
+        return {"status": "success", "report": "".join(report_parts)}
+    
+    return {"status": "error", "error_message": "Terjadi kesalahan yang tidak terduga."}
+
+def daftar_semua_dokter() -> dict:
+    """Mengambil dan menampilkan daftar semua dokter beserta poli tempat mereka praktik."""
+    
+    print("\n--- DEBUG: Memulai daftar_semua_dokter ---")
+    
+    # 1. Minta data PractitionerRole dan sertakan data Practitioner terkait
+    query = "PractitionerRole?_include=PractitionerRole:practitioner&_count=100"
+    bundle = make_fhir_request('GET', query)
+    
+    if not bundle or bundle.get("total", 0) == 0:
+        return {"status": "error", "error_message": "Tidak ada data dokter atau jadwal praktik yang ditemukan."}
+
+    # 2. Pisahkan data Practitioner dan PractitionerRole untuk diproses
+    practitioners = {
+        f'Practitioner/{p["resource"]["id"]}': p["resource"] 
+        for p in bundle.get("entry", []) 
+        if p.get("resource", {}).get("resourceType") == "Practitioner"
+    }
+    roles = [
+        r["resource"] 
+        for r in bundle.get("entry", []) 
+        if r.get("resource", {}).get("resourceType") == "PractitionerRole"
+    ]
+
+    # 3. Kelompokkan poli berdasarkan dokter
+    doctor_specialties = {}
+    for role in roles:
+        practitioner_ref = role.get("practitioner", {}).get("reference")
+        specialty = role.get("specialty", [{}])[0].get("text", "Tidak ada spesialisasi")
+        
+        if practitioner_ref not in doctor_specialties:
+            doctor_specialties[practitioner_ref] = []
+        
+        # Hindari duplikasi poli untuk dokter yang sama
+        if specialty not in doctor_specialties[practitioner_ref]:
+            doctor_specialties[practitioner_ref].append(specialty)
+
+    if not doctor_specialties:
+        return {"status": "error", "error_message": "Gagal memproses data jadwal dokter."}
 
     # 4. Susun laporan akhir
-    report = f"Berikut adalah jadwal praktik untuk **{doctor_full_name}**:"
-    report += "".join(jadwal_text_list)
-    
-    return {"status": "success", "report": report}
+    report_parts = ["Berikut adalah daftar semua dokter yang terdaftar beserta polinya:"]
+    for practitioner_ref, specialties in doctor_specialties.items():
+        practitioner = practitioners.get(practitioner_ref)
+        if practitioner:
+            name_parts = practitioner.get("name", [{}])[0]
+            prefix = " ".join(name_parts.get("prefix", []))
+            given = " ".join(name_parts.get("given", []))
+            family = name_parts.get("family", "")
+            suffix = ", ".join(name_parts.get("suffix", []))
+            doctor_full_name = " ".join(part for part in [prefix, given, family, suffix] if part).strip()
+            
+            specialties_text = ", ".join(specialties)
+            report_parts.append(f"- **{doctor_full_name}**: {specialties_text}")
+
+    return {"status": "success", "report": "\n".join(report_parts)}
 
 # Function to check upcoming appointments and send reminders    
 def periksa_janji_temu(nama_depan: Optional[str] = None, nama_belakang: Optional[str] = None, tanggal_lahir: Optional[str] = None, mrn: Optional[str] = None) -> dict:

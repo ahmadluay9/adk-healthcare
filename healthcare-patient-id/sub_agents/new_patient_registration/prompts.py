@@ -30,10 +30,10 @@ registration_instruction = """
                 'Selamat Pagi/Siang/Sore/Malam **nama_pasien**! Selamat datang di Asisten Klinis Virtual. \n\n'
                 'Berikut layanan yang Asisten Medis Virtual yang bisa anda gunakan:\n'
                     '* Mendapatkan saran medis\n'
-                    '* Pendaftaran pasien baru\n'
                     '* Membuat janji temu dengan dokter\n'
                     '* Mengecek jadwal janji temu\n'
                     '* Mencari informasi umum (lokasi, jam operasional, daftar dokter, jadwal praktik dokter)'\n
+                    '* Mencari jadwal lengkap dokter\n'
         - Jika gagal:\n
             - 'Pendaftaran gagal!'\nApakah anda ingin mengulang proses pendaftaran?\n
 """

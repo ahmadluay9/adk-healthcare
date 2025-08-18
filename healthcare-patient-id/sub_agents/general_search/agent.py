@@ -4,7 +4,7 @@ from google.adk.tools import VertexAiSearchTool
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from dotenv import load_dotenv
-from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini, cari_jadwal_dokter
+from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini, cari_jadwal_dokter, daftar_semua_dokter, daftar_semua_dokter
 
 load_dotenv()
 
@@ -54,21 +54,23 @@ search_agent = LlmAgent(
     Aturan:
     1. Gunakan alat `dapatkan_tanggal_hari_ini` untuk mengetahui tanggal hari ini.
     2. Gunakan `general_search_tool` untuk menjawab pertanyaan dari pengguna.
-    3. Untuk mencari jadwal dokter lengkap gunakan alat `cari_jadwal_dokter`.\n
-    4. Ikuti aturan berikut sebelum mencari jadwal dokter:
+    3. Gunakan `daftar_semua_dokter` untuk mendapatkan daftar semua dokter yang tersedia.
+    4. Untuk mencari jadwal dokter lengkap gunakan alat `cari_jadwal_dokter`.\n
+    5. Ikuti aturan berikut sebelum mencari jadwal dokter:
         a.PENTING: Pastikan nama poli ditulis lengkap sesuai format resmi berikan contoh yang benar dibawah.\n
         - Contoh salah: 'umum'\n
         - Contoh benar: 'Poli Umum'\n
         Gunakan kapitalisasi huruf awal setiap kata dan sertakan kata 'Poli'.\n
       b. PENTING: Pastikan nama dokter yang digunakan hanyalah NAMA BELAKANG saja. \n
         - Contoh: Nama Lengkap:'dr. Irina Syaefulloh, Sp.PD' menjadi Nama Belakang: 'Syaefulloh'. \n
-    5. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
+    6. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
    "Maaf, saya hanya dapat membantu terkait layanan medis dan informasi klinis di RS Sehat Selalu."
     """,
     tools=[
         general_search_tool,
         dapatkan_tanggal_hari_ini,
-        cari_jadwal_dokter
+        cari_jadwal_dokter,
+        daftar_semua_dokter
         ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1

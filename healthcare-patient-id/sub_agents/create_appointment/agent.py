@@ -8,19 +8,20 @@ from ...tools import buat_janji_temu, \
                     model_name, \
                     model_lite, \
                     model_pro, \
-                    dapatkan_data_pasien_dari_email, \
+                    dapatkan_data_pasien, \
                     registrasi_pasien_baru, \
-                    cari_jadwal_dokter
+                    cari_jadwal_dokter, \
+                    daftar_semua_dokter
 from ..create_appointment.prompts import appointment_instruction, greeting_instruction, registration_instruction
 
 create_appointment_verify_patient_identity_agent = LlmAgent(
     name="CreateAppointmentVerifyPatientIdentityAgent",
     model=model_lite,
-    description="Agen yang bertugas menyampaikan pesan sebelum proses verifikasi identitas pasien.",
+    description="Agen yang bertugas menyampaikan pesan sebelum proses pencarian data pasien.",
     instruction=("""
         Tugas Anda adalah sebagai berikut:
         1. Sampaikan pesan berikut kepada pengguna:
-        "Saya akan melakukan verifikasi identitas anda terlebih dahulu."
+        "Saya akan bantu mencarikan data Anda. Mohon tunggu terlebih dahulu."
     """),
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2
@@ -30,22 +31,22 @@ create_appointment_verify_patient_identity_agent = LlmAgent(
 create_appointment_verification_status_agent = LlmAgent(
     name="CreatePatientVerificationStatusAgent",
     model=model_name,
-    description="Agen yang bertugas memverifikasi identitas pasien.",
+    description="Agen yang bertugas mencarikan data pasien.",
     instruction=("""
         Tugas Anda adalah adalah sebagai berikut:\n
         1. Gunakan email yang dimasukan pengguna untuk mendapatkan data pasien.\n
-        2. Panggil alat `dapatkan_data_pasien_dari_email` untuk mendapatkan data pasien.
+        2. Panggil alat `dapatkan_data_pasien` untuk mendapatkan data pasien.
         3. Berdasarkan hasil dari pengecekan data pasien tersebut:\n
             a. Sampaikan respon dibawah ini jika pasien sudah terdaftar: \n
-              - 'Terima kasih, **nama_lengkap_pasien**. **Anda sudah terverifikasi**.'\n
+              - 'Terima kasih, **nama_lengkap_pasien**. Data Anda berhasil ditemukan.'\n
             b. Sampaikan respon dibawah ini jika pasien belum terdaftar: \n
-              - '**Anda belum terdaftar**.'\n
+              - 'Maaf, data Anda belum terdaftar dalam sistem kami.'\n
     """),
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2
     ),
     output_key="verification_status",
-    tools=[dapatkan_data_pasien_dari_email]
+    tools=[dapatkan_data_pasien]
 )
 
 create_appointment_patient_info_agent  = LlmAgent(
@@ -54,7 +55,7 @@ create_appointment_patient_info_agent  = LlmAgent(
     description="Agen yang menampilkan informasi identitas pasien (Nama, MRN).",
     instruction=("""
         Tugas Anda adalah sebagai berikut:\n
-        1. Bila {verification_status} bernilai 'terverifikasi': 
+        1. Bila {verification_status} bernilai 'Data anda ditemukan': 
             - Berikan respon dengan format berikut:\n
                 * Nama Depan:  \n
                 * Nama Belakang:  \n
@@ -84,7 +85,7 @@ create_apointment_patient_verification_workflow = SequentialAgent(
         create_appointment_patient_info_agent, 
         create_appointment_greeting_agent
         ],
-    description="Workflow untuk memverifikasi identitas pasien sebelum mereka bisa membuat janji temu mereka dengan dokter.",
+    description="Workflow untuk mencarikan data pasien sebelum mereka bisa membuat janji temu mereka dengan dokter.",
 )
 
 create_apointment_new_patient_registration_agent = LlmAgent(
@@ -110,7 +111,8 @@ create_appointment_agent = LlmAgent(
     tools=[
         buat_janji_temu, 
         dapatkan_tanggal_hari_ini,
-        cari_jadwal_dokter
+        cari_jadwal_dokter,
+        daftar_semua_dokter
         ],
     output_key="appointment_confirmation",
     generate_content_config=types.GenerateContentConfig(
@@ -118,20 +120,20 @@ create_appointment_agent = LlmAgent(
     )
 )
 
-
 create_appointment_root_agent = LlmAgent(
     model = model_pro,
     name='CreateAppointmentRootAgent',
     description="Agen utama untuk proses verifikasi dan membuat janji temu baru untuk pasien dengan dokter tertentu.",
     instruction="""
-    1. Untuk pasien lama, selalu minta email atau nomor telepon sebagai verifikasi identitas. \n
-    2. Kemudian Lakukan verifikasi pasien terlebih dahulu menggunakan agen `create_apointment_patient_verification_workflow`.\n
-    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `create_apointment_new_patient_registration_agent`.
+    1. Untuk pasien lama, selalu minta email atau nomor telepon (format: 628xxxxxxxxx) agar dapat dicarikan datanya. \n
+    2. Pastikan format nomor telepon dalam format internasional (contoh: 6281234567890).\n
+    3. Kemudian carikan data pasien terlebih dahulu menggunakan agen `create_apointment_patient_verification_workflow`.\n
+    4. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `create_apointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
-    4. Setelah verifikasi berhasil, pengguna bisa membuat janji temu dengan dokter menggunakan agen `create_appointment_agent`.\n
-    5. Gunakan alat `cari_jadwal_dokter` Untuk mendapatkan informasi jadwal lengkap praktik dokter.
-    6. Ikuti aturan berikut sebelum mencari jadwal dokter:
+    5. Setelah verifikasi berhasil, pengguna bisa membuat janji temu dengan dokter menggunakan agen `create_appointment_agent`.\n
+    6. Gunakan alat `daftar_semua_dokter` untuk mendapatkan daftar semua dokter yang tersedia.
+    7. Ikuti aturan berikut sebelum mencari jadwal dokter:
         a.PENTING: Pastikan anda mengubah nama poli yang ditulis sesuai format resmi berikan, contoh yang benar dibawah.\n
         - Contoh salah: 'umum'\n
         - Contoh benar: 'Poli Umum'\n
@@ -145,7 +147,8 @@ create_appointment_root_agent = LlmAgent(
         create_appointment_agent
         ],
     tools=[
-        cari_jadwal_dokter
+        cari_jadwal_dokter,
+        daftar_semua_dokter
     ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1

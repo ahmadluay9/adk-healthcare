@@ -2,7 +2,7 @@ import os
 from google.adk.agents import LlmAgent
 from google.genai import types
 from dotenv import load_dotenv
-from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini
+from ...tools import model_name, model_pro, dapatkan_tanggal_hari_ini, cari_jadwal_dokter, daftar_semua_dokter
 from ..general_search.agent import general_search_tool
 
 load_dotenv()
@@ -12,15 +12,25 @@ medical_advice_search_agent = LlmAgent(
     description="Agen untuk mencarikan dokter yang relevan dengan keluhan pengguna.",
     instruction="""
     1. Gunakan alat `dapatkan_tanggal_hari_ini` untuk mengetahui tanggal hari ini. \n
-    2. Gunakan `general_search_tool` untuk mencarikan dokter yang relevan dengan keluhan pengguna. \n
-    3. Tawarkan apakah ingin membuat janji dengan dokter tersebut. \n
-    4. Apabila pengguna ingin membuat janji arahkan ke agen `CreateAppointmentRootAgent` \n
-    5. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
+    2. Gunakan alat `daftar_semua_dokter` untuk mendapatkan daftar semua dokter yang tersedia. \n
+    3. Gunakan alat `cari_jadwal_dokter` untuk mendapatkan jadwal praktik dokter. \n
+    4. Jika hasil dari saran medis mengarahkan ke spesialis tertentu (contoh: 'Spesialis Penyakit Dalam' atau 'Dokter Penyakit Dalam'), maka arahkan pencarian ke poli yang sesuai (contoh: 'Poli Penyakit Dalam'). \n
+    5. PENTING: Pastikan nama poli ditulis lengkap sesuai format resmi berikan contoh yang benar dibawah.\n
+        - Contoh salah: 'umum'\n
+        - Contoh benar: 'Poli Umum'\n
+        Gunakan kapitalisasi huruf awal setiap kata dan sertakan kata 'Poli'.\n
+    6. PENTING: Pastikan Anda hanya menggunakan nama belakang dokter untuk mencari jadwal. \n
+        - Contoh: Nama Lengkap:'dr. Irina Syaefulloh, Sp.PD' gunakan Nama Belakang: 'Syaefulloh'. \n
+    7. Selalu sampaikan Nama Poli, Nama Dokter, Jadwal Praktik, Tanggal Praktik. \n
+    8. Tawarkan apakah ingin membuat janji dengan dokter tersebut. \n
+    9. Apabila pengguna ingin membuat janji arahkan ke agen `CreateAppointmentRootAgent` \n
+    10. Jika pengguna menanyakan hal yang tidak berkaitan dengan layanan medis atau informasi klinis, berikan jawaban singkat yang sopan seperti:
    "Maaf, saya hanya dapat membantu terkait layanan medis dan informasi klinis di RS Sehat Selalu."
     """,
     tools=[
-        general_search_tool,
-        dapatkan_tanggal_hari_ini
+        cari_jadwal_dokter,
+        dapatkan_tanggal_hari_ini,
+        daftar_semua_dokter
         ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1
@@ -28,7 +38,6 @@ medical_advice_search_agent = LlmAgent(
     output_key="search_results"
 )
 
-# Search Agent 1: Google Search for General Medical Information
 medical_advice_agent = LlmAgent(
     name="MedicalAdviceAgent",
     model=model_pro,
@@ -48,11 +57,9 @@ medical_advice_agent = LlmAgent(
     3. Gunakan gaya bertanya yang sopan dan natural sesuai bahasa pasien.
     4. Jika informasi sudah cukup, berikan saran medis umum dan non-darurat sesuai gejala yang disampaikan.
     5. Setelah memberikan saran, tentukan jenis dokter atau spesialis yang relevan dengan keluhan pasien.
-    6. Selalu akhiri respon dengan kalimat:
-       "Jika keluhan berlanjut atau memburuk, segera konsultasikan dengan dokter."
-       dan lanjutkan dengan tawaran:
-       "\n Saya bisa membantu mencarikan dokter **jenis_dokter** yang sesuai untuk Anda di RS Sehat Selalu. Apakah Anda ingin melanjutkan?"
-    7. Gunakan agen `MedicalAdviceSearchAgent` untuk mencari poli klinik dan dokter yang relevan dengan keluhan pasien.
+    6. Selalu sarankan untuk konsultasikan dengan dokter jika keluhan berlanjut atau memburuk.
+    7. Selalu akhiri dengan menawarkan untuk mencarikan dokter atau spesialis yang relevan dengan keluhan pasien.
+    8. Gunakan agen `MedicalAdviceSearchAgent` untuk mencari poli klinik dan dokter yang relevan dengan keluhan pasien.
     """,
     description="Agen yang memberikan saran medis umum untuk keluhan non-darurat, selalu bertanya detail terlebih dahulu dan menawarkan opsi mencari dokter.",
     generate_content_config=types.GenerateContentConfig(
@@ -61,6 +68,7 @@ medical_advice_agent = LlmAgent(
     sub_agents=[
         medical_advice_search_agent,
         ],
+    output_key="medical_advice_results"
 #     tools=[
 #         general_search_tool
 #     ]

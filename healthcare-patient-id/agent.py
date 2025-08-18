@@ -27,7 +27,7 @@ from .sub_agents.create_appointment.agent import create_appointment_root_agent
 # from .sub_agents.check_diagnosis.agent import check_diagnosis_agent
 # from .sub_agents.bpjs_check.agent import bpjs_check_agent
 
-from .tools import model_name, model_pro, model_lite, dapatkan_waktu_sekarang, dapatkan_tanggal_hari_ini, cari_jadwal_dokter
+from .tools import model_name, model_pro, model_lite, dapatkan_waktu_sekarang, dapatkan_tanggal_hari_ini, cari_jadwal_dokter, daftar_semua_dokter
 from .prompts import promp_instruction, promp_instruction_v1, promp_instruction_v2, promp_instruction_v4, promp_instruction_v4
 
 # --- Konfigurasi Lingkungan ---
@@ -71,6 +71,7 @@ root_agent = Agent(
         # general_search_tool,
         dapatkan_waktu_sekarang,
         dapatkan_tanggal_hari_ini,
-        cari_jadwal_dokter
+        cari_jadwal_dokter,
+        daftar_semua_dokter
         ]
 )
