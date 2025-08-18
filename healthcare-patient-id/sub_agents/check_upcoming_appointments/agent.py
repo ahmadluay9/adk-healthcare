@@ -32,7 +32,7 @@ check_appointment_verification_status_agent = LlmAgent(
             a. Sampaikan respon dibawah ini jika pasien sudah terdaftar: \n
               - 'Terima kasih, **nama_lengkap_pasien**. Data Anda berhasil ditemukan.'\n
             b. Sampaikan respon dibawah ini jika pasien belum terdaftar: \n
-              - 'Maaf, data Anda belum terdaftar dalam sistem kami.'\n
+              - 'Maaf, data dengan **{email/nomor_telepon}** tidak terdaftar dalam sistem kami.'\n
     """),
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2
@@ -53,7 +53,7 @@ check_appointment_patient_info_agent  = LlmAgent(
                 * Nama Belakang:  \n
                 * MRN: \n
             - Jangan tampilkan baris field yang kosong.
-        2. Jika {verification_status} bernilai 'belum terdaftar', sampaikan kepada pengguna data anda tidak ditemukan.
+        2. Jika {verification_status} bernilai 'tidak terdaftar', sampaikan kepada pengguna data anda tidak ditemukan dan minta untuk periksa kembali.
     """),
     output_key="patient_info",
     generate_content_config=types.GenerateContentConfig(
@@ -123,12 +123,11 @@ check_appointment_root_agent = LlmAgent(
     description="Agen utama untuk proses verifikasi dan memeriksa jadwal janji temu pasien yang akan datang.",
     instruction=("""
     1. Untuk pasien lama, selalu minta email atau nomor telepon (format: 628xxxxxxxxx) agar dapat dicarikan datanya. \n
-    2. Pastikan format nomor telepon dalam format internasional (contoh: 6281234567890).\n
-    3. Kemudian carikan data pasien terlebih dahulu menggunakan agen `check_appointment_patient_verification_workflow`.\n
-    4. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
+    2. Kemudian carikan data pasien terlebih dahulu menggunakan agen `check_appointment_patient_verification_workflow`.\n
+    3. Apabila pengguna merupakan pasien baru arahkan untuk pendaftaran pasien baru menggunakan agen `check_appointment_new_patient_registration_agent`.
         - Apabila pendaftaran berhasil, arahkan kembali untuk untuk melakukan verifikasi pasien.\n
         - Apabila pendaftaran gagal, tawarkan untuk mengulang proses pendaftaran.\n
-    5. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `check_appointment_agent`.\n
+    4. Setelah verifikasi berhasil, pengguna bisa periksa janji temu dengan dokter menggunakan agen `check_appointment_agent`.\n
 """),
     sub_agents=[
         check_appointment_patient_verification_workflow,
